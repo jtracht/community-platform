@@ -294,7 +294,9 @@ function render(data) {
         ? "Bringe alle Optionen in deine Reihenfolge."
         : p.rules.type === "text"
           ? "Welche Idee möchtest du einbringen?"
-          : "Wähle deine Antwort.",
+          : p.rules.type === "multiple"
+            ? "Wähle deine Antworten."
+            : "Wähle deine Antwort.",
     ),
   );
   let order = p.rules.options.map((_, i) => i);
@@ -375,19 +377,15 @@ function render(data) {
       fs.append(label);
     });
     if (p.rules.type === "multiple") {
-      const status = el(
-        "p",
-        `Mehrfachauswahl · 0/${p.rules.maxChoices}`,
-        "selection-state",
-      );
+      const status = el("p", "", "selection-state");
       status.setAttribute("role", "status");
+      status.hidden = true;
       function updateSelection() {
         const inputs = [...fs.querySelectorAll('input[name="choice"]')];
         const count = inputs.filter((input) => input.checked).length;
         const full = count >= p.rules.maxChoices;
-        status.textContent = full
-          ? `${count}/${p.rules.maxChoices} ausgewählt · Auswahl vollständig`
-          : `Mehrfachauswahl · ${count}/${p.rules.maxChoices}`;
+        status.textContent = full ? "Auswahl vollständig" : "";
+        status.hidden = !full;
         status.classList.toggle("selection-full", full);
         inputs.forEach((input) => {
           input.disabled = full && !input.checked;

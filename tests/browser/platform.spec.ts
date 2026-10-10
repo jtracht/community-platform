@@ -78,9 +78,7 @@ for (const type of ["single", "multiple", "ranking", "text"] as const) {
     else if (type === "multiple") {
       await page.getByRole("checkbox", { name: "Einfachheit" }).check();
       await page.getByRole("checkbox", { name: "Transparenz" }).check();
-      await expect(
-        page.getByText("2/2 ausgewählt · Auswahl vollständig"),
-      ).toBeVisible();
+      await expect(page.getByText("Auswahl vollständig")).toBeVisible();
       await expect(
         page.getByRole("checkbox", { name: "Zugänglichkeit" }),
       ).toBeDisabled();
