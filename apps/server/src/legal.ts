@@ -1,4 +1,6 @@
 import type { FastifyInstance } from "fastify";
+import { readFile } from "node:fs/promises";
+import { rows } from "../../../packages/database/index.js";
 function escape(value: string) {
   return value.replace(
     /[&<>"']/g,
@@ -9,6 +11,23 @@ function escape(value: string) {
   );
 }
 export async function legalRoutes(app: FastifyInstance) {
+  app.get("/ueber-das-projekt", async (_, reply) =>
+    reply
+      .type("text/html")
+      .send(await readFile("apps/public/project.html", "utf8")),
+  );
+  app.get("/api/project", async () => {
+    const stats = (
+      await rows<{ polls: number; votes: number }>(
+        `SELECT COUNT(*) AS polls,COALESCE(SUM(CASE WHEN p.released=TRUE THEN COALESCE((SELECT CAST(JSON_UNQUOTE(JSON_EXTRACT(d.result,'$.total')) AS UNSIGNED) FROM decisions d WHERE d.poll_id=p.id LIMIT 1),0) ELSE (SELECT COUNT(*) FROM votes v WHERE v.poll_id=p.id AND v.valid=TRUE) END),0) AS votes FROM polls p WHERE p.status IN ('active','closed','archived')`,
+      )
+    )[0]!;
+    return {
+      polls: Number(stats.polls),
+      votes: Number(stats.votes),
+      operator: process.env.OPERATOR_NAME ?? null,
+    };
+  });
   for (const [path, title, text] of [
     [
       "/impressum",

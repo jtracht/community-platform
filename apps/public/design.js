@@ -1,67 +1,70 @@
-/* Locally served Motion; pause control and system preferences govern decorative movement. */
+/* One interpolation loop preserves velocity instead of restarting a spring on every event. */
 (() => {
+  const scene = document.querySelector(".depth-scene");
+  if (!scene) return;
   const reduced = matchMedia("(prefers-reduced-motion: reduce)");
-  const motion = window.Motion;
-  const toggle = document.querySelector("#motion-toggle");
-  if (!motion) {
-    toggle.hidden = true;
-    return;
+  const fine = matchMedia("(hover: hover) and (pointer: fine)");
+  let target = { x: 0, y: 0 },
+    position = { x: 0, y: 0 },
+    frame = 0,
+    last = 0;
+  window.Motion?.animate(
+    scene,
+    { opacity: [0, 1] },
+    { duration: reduced.matches ? 0 : 0.7 },
+  );
+  function enabled() {
+    return !reduced.matches && fine.matches && !document.hidden;
   }
-  let paused = false;
-  const floating = [];
-  const entering = new Set();
-  const seen = new WeakSet();
-  function enter() {
-    if (reduced.matches || document.hidden || paused) return;
-    [...document.querySelector("#poll").children].forEach((element, i) => {
-      if (seen.has(element) || element.hidden) return;
-      seen.add(element);
-      const control = motion.animate(
-        element,
-        { y: [12, 0] },
-        { duration: 0.55, delay: Math.min(i * 0.04, 0.24), ease: "easeOut" },
-      );
-      entering.add(control);
-      Promise.resolve(control).finally(() => entering.delete(control));
-    });
+  function draw(time) {
+    const dt = Math.min(50, last ? time - last : 16.7);
+    last = time;
+    const smoothing = 1 - Math.exp(-dt / 110);
+    position.x += (target.x - position.x) * smoothing;
+    position.y += (target.y - position.y) * smoothing;
+    scene.style.transform = `rotateX(${-position.y * 12}deg) rotateY(${position.x * 18}deg) translate3d(${position.x * 22}px,${position.y * 14}px,0)`;
+    scene.style.setProperty("--light-x", 45 + position.x * 18 + "%");
+    scene.style.setProperty("--light-y", 32 + position.y * 15 + "%");
+    if (
+      enabled() &&
+      (Math.abs(target.x - position.x) > 0.0005 ||
+        Math.abs(target.y - position.y) > 0.0005)
+    )
+      frame = requestAnimationFrame(draw);
+    else {
+      frame = 0;
+      last = 0;
+    }
   }
-  new MutationObserver(enter).observe(document.querySelector("#poll"), {
-    childList: true,
+  function schedule() {
+    if (!frame && enabled()) frame = requestAnimationFrame(draw);
+  }
+  document.addEventListener(
+    "pointermove",
+    (event) => {
+      if (!enabled() || event.pointerType === "touch") return;
+      target = {
+        x: (event.clientX / innerWidth) * 2 - 1,
+        y: (event.clientY / innerHeight) * 2 - 1,
+      };
+      schedule();
+    },
+    { passive: true },
+  );
+  document.documentElement.addEventListener("pointerleave", () => {
+    target = { x: 0, y: 0 };
+    schedule();
   });
-  enter();
-  function sync() {
-    const disabled = paused || reduced.matches || document.hidden;
-    if (!floating.length && !disabled) {
-      document
-        .querySelectorAll(".orbit,.star,.hologram,.float-tile,.light-trail")
-        .forEach((element, i) => {
-          floating.push(
-            motion.animate(
-              element,
-              { y: [0, i % 2 ? -14 : 18, 0], x: [0, i % 2 ? 5 : -5, 0] },
-              { duration: 10 + i * 0.8, repeat: Infinity, ease: "easeInOut" },
-            ),
-          );
-        });
-    }
-    for (const control of floating) disabled ? control.pause() : control.play();
-    if (disabled) {
-      for (const control of entering) control.complete();
-      entering.clear();
-    }
-    toggle.disabled = reduced.matches;
-    toggle.setAttribute("aria-pressed", String(paused || reduced.matches));
-    toggle.textContent = reduced.matches
-      ? "Bewegung reduziert"
-      : paused
-        ? "Bewegung fortsetzen"
-        : "Bewegung pausieren";
+  function reset() {
+    cancelAnimationFrame(frame);
+    frame = 0;
+    last = 0;
+    target = position = { x: 0, y: 0 };
+    scene.style.transform = "";
+    scene.style.removeProperty("--light-x");
+    scene.style.removeProperty("--light-y");
   }
-  toggle.onclick = () => {
-    paused = !paused;
-    sync();
-  };
-  reduced.addEventListener("change", sync);
-  document.addEventListener("visibilitychange", sync);
-  sync();
+  reduced.addEventListener("change", reset);
+  fine.addEventListener("change", reset);
+  document.addEventListener("visibilitychange", reset);
 })();

@@ -1,5 +1,55 @@
 const root = document.querySelector("#poll"),
   message = document.querySelector("#message");
+let countdown;
+function timer(p) {
+  const box = el("span", undefined, "countdown");
+  const ring = el("span", undefined, "timer-ring");
+  ring.setAttribute("aria-hidden", "true");
+  const text = el("span");
+  box.append(ring, text);
+  box.setAttribute("aria-live", "off");
+  function tick() {
+    const seconds = Math.max(
+      0,
+      p.status === "active"
+        ? Math.ceil((Date.parse(p.endsAt) - Date.now()) / 1000)
+        : 0,
+    );
+    const days = Math.floor(seconds / 86400),
+      hours = Math.floor(seconds / 3600) % 24,
+      minutes = Math.floor(seconds / 60) % 60;
+    text.textContent =
+      seconds === 0
+        ? "Abgelaufen"
+        : days
+          ? `${days} T ${hours} Std`
+          : `${String(Math.floor(seconds / 3600)).padStart(2, "0")}:${String(minutes).padStart(2, "0")}:${String(seconds % 60).padStart(2, "0")}`;
+    box.setAttribute(
+      "aria-label",
+      seconds
+        ? "Verbleibende Zeit: " + text.textContent
+        : "Abstimmung abgelaufen",
+    );
+    ring.style.setProperty(
+      "--progress",
+      Math.max(
+        0,
+        Math.min(
+          1,
+          seconds /
+            Math.max(1, (Date.parse(p.endsAt) - Date.parse(p.startsAt)) / 1000),
+        ),
+      ) *
+        360 +
+        "deg",
+    );
+    if (!seconds) clearInterval(countdown);
+  }
+  tick();
+  if (p.status === "active" && Date.parse(p.endsAt) > Date.now())
+    countdown = setInterval(tick, 1000);
+  return box;
+}
 function el(tag, text, cls) {
   const e = document.createElement(tag);
   if (text !== undefined) e.textContent = text;
@@ -69,19 +119,13 @@ function showResults(data, type) {
   return box;
 }
 function render(data) {
+  clearInterval(countdown);
   root.replaceChildren();
-  root.append(
-    el(
-      "p",
-      data.mode === "waiting"
-        ? "ZWISCHEN ZWEI ENTSCHEIDUNGEN"
-        : "COMMUNITY-UMFRAGE",
-      "eyebrow",
-    ),
-  );
+  document.querySelector("#rules-open").hidden = data.mode === "waiting";
+  document.querySelector("#rules-content").replaceChildren();
   if (data.mode === "waiting") {
     root.append(
-      el("h1", "Der nächste Schritt entsteht gemeinsam."),
+      el("h1", "Aktuell keine Abstimmung."),
       el("p", data.message, "description"),
     );
     return;
@@ -90,14 +134,14 @@ function render(data) {
   root.append(el("h1", p.title), el("p", p.description, "description"));
   const meta = el("div", undefined, "meta");
   meta.append(
+    timer(p),
     el(
       "span",
-      p.status === "active"
-        ? "● Abstimmung geöffnet"
-        : "Abstimmung abgeschlossen",
+      new Intl.NumberFormat("de-DE").format(
+        data.participationCount ?? data.results?.total ?? 0,
+      ) + " Stimmen",
+      "vote-count",
     ),
-    el("span", "Ende: " + new Date(p.endsAt).toLocaleString("de-DE")),
-    el("span", "Regelversion " + p.rules.version),
   );
   root.append(meta);
   const scheduleBox = el("section", undefined, "panel");
@@ -129,8 +173,23 @@ function render(data) {
     };
     root.append(logout);
   }
-  const ruleBox = el("details", undefined, "panel");
-  ruleBox.append(el("summary", "Abstimmungsregeln"));
+  const ruleBox = document.querySelector("#rules-content");
+  ruleBox.append(
+    el(
+      "p",
+      "Anonyme Stimmen verwenden eine Browserkennung. Gelöschte Cookies und weitere Geräte können technisch nicht zuverlässig ausgeschlossen werden.",
+    ),
+    el("p", "Regelversion " + p.rules.version),
+    el(
+      "p",
+      "Teilnahme: " +
+        {
+          anonymous: "anonym je Browser",
+          email: "verifizierte E-Mail je Umfrage",
+          account: "verifiziertes Konto",
+        }[p.rules.participation],
+    ),
+  );
   const visibility = {
     hidden: "Ergebnisse werden nicht öffentlich angezeigt.",
     after_vote: "Ergebnisse nach der eigenen Stimmabgabe.",
@@ -149,7 +208,6 @@ function render(data) {
           : "Bei Gleichstand gilt gleiche Priorität."),
     ),
   );
-  root.append(ruleBox);
   if (data.results) {
     if (!p.released)
       root.append(
@@ -316,22 +374,29 @@ function render(data) {
       label.append(input, el("span", option));
       fs.append(label);
     });
-    if (p.rules.type === "multiple")
-      fs.append(
-        el(
-          "p",
-          `${p.rules.minChoices} bis ${p.rules.maxChoices} Antworten auswählen.`,
-          "hint",
-        ),
+    if (p.rules.type === "multiple") {
+      const status = el(
+        "p",
+        `Mehrfachauswahl · 0/${p.rules.maxChoices}`,
+        "selection-state",
       );
+      status.setAttribute("role", "status");
+      function updateSelection() {
+        const inputs = [...fs.querySelectorAll('input[name="choice"]')];
+        const count = inputs.filter((input) => input.checked).length;
+        const full = count >= p.rules.maxChoices;
+        status.textContent = full
+          ? `${count}/${p.rules.maxChoices} ausgewählt · Auswahl vollständig`
+          : `Mehrfachauswahl · ${count}/${p.rules.maxChoices}`;
+        status.classList.toggle("selection-full", full);
+        inputs.forEach((input) => {
+          input.disabled = full && !input.checked;
+        });
+      }
+      fs.addEventListener("change", updateSelection);
+      fs.append(status);
+    }
   }
-  fs.append(
-    el(
-      "p",
-      "Anonyme Teilnahme: Eine Stimme je Browser. Das Löschen von Cookies oder weitere Geräte können technisch nicht zuverlässig ausgeschlossen werden.",
-      "hint",
-    ),
-  );
   form.append(fs);
   const submit = el("button", "Stimme abgeben →", "primary");
   submit.type = "submit";
@@ -494,3 +559,13 @@ refreshPoll();
 window.addEventListener("hashchange", () => {
   if (location.hash.includes("verify=")) refreshPoll();
 });
+
+document.querySelector("#rules-open").onclick = () =>
+  document.querySelector("#rules-dialog").showModal();
+document.querySelector("#rules-close").onclick = () =>
+  document.querySelector("#rules-dialog").close();
+
+document.querySelector("#donate-open").onclick = () =>
+  document.querySelector("#donate-dialog").showModal();
+document.querySelector("#donate-close").onclick = () =>
+  document.querySelector("#donate-dialog").close();

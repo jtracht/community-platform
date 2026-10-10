@@ -78,6 +78,17 @@ for (const type of ["single", "multiple", "ranking", "text"] as const) {
     else if (type === "multiple") {
       await page.getByRole("checkbox", { name: "Einfachheit" }).check();
       await page.getByRole("checkbox", { name: "Transparenz" }).check();
+      await expect(
+        page.getByText("2/2 ausgewählt · Auswahl vollständig"),
+      ).toBeVisible();
+      await expect(
+        page.getByRole("checkbox", { name: "Zugänglichkeit" }),
+      ).toBeDisabled();
+      await page.getByRole("checkbox", { name: "Transparenz" }).uncheck();
+      await expect(
+        page.getByRole("checkbox", { name: "Zugänglichkeit" }),
+      ).toBeEnabled();
+      await page.getByRole("checkbox", { name: "Transparenz" }).check();
     } else {
       await page
         .getByRole("button", { name: "Transparenz: Nach oben" })
@@ -118,7 +129,7 @@ test("Waiting state, legal information and protected admin login are accessible"
   await page.goto("/");
   await expect(
     page.getByRole("heading", {
-      name: "Der nächste Schritt entsteht gemeinsam.",
+      name: "Aktuell keine Abstimmung.",
     }),
   ).toBeVisible();
   await page.getByRole("link", { name: "Impressum" }).click();

@@ -69,6 +69,7 @@ test(
     await assert.rejects(() => vote(id, randomUUID(), [3]));
     await vote(id, randomUUID(), [1]);
     assert.equal((await current(voter)).results, null);
+    assert.equal((await current()).participationCount, 2);
     const app = await buildApp();
     const forbidden = await app.inject({
       method: "POST",
@@ -135,6 +136,7 @@ test(
     });
     const released = await current();
     assert.equal(released.results?.total, 2);
+    assert.equal(released.participationCount, 2);
     assert.equal(released.results?.tie, true);
     assert.equal(released.results?.runoffRequired, true);
     await assert.rejects(() => changePoll(id, "release", actor));

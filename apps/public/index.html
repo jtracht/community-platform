@@ -16,22 +16,16 @@
   </head>
   <body class="survey-stage">
     <div class="atmosphere" aria-hidden="true">
-      <div class="halo halo-one"></div>
-      <div class="halo halo-two"></div>
-      <div class="orbit orbit-one"></div>
-      <div class="hologram"><i></i><i></i><i></i><b></b></div>
-      <div class="light-trail"></div>
-      <div class="float-tile tile-one">
-        <span></span><span></span><span></span>
+      <div class="depth-scene">
+        <div class="orb orb-main">
+          <div class="orb-skin"></div>
+          <div class="orb-lines"><i></i><i></i><i></i></div>
+        </div>
+        <div class="orb orb-small"><div class="orb-skin"></div></div>
       </div>
-      <div class="float-tile tile-two"><span></span><span></span></div>
-      <div class="orbit orbit-two"></div>
-      <span class="star star-one"></span><span class="star star-two"></span
-      ><span class="star star-three"></span>
     </div>
     <main id="main">
       <div id="poll" aria-live="polite">
-        <p class="eyebrow">COMMUNITY-UMFRAGE</p>
         <h1>Wir entscheiden gemeinsam.</h1>
         <p>Umfrage wird geladen …</p>
       </div>
@@ -41,16 +35,56 @@
       <nav aria-label="Basisinformationen">
         <a href="/impressum" data-legal="imprint">Impressum</a
         ><a href="/datenschutz" data-legal="privacy">Datenschutz</a
-        ><a href="/beitraege" data-legal="contributions"
-          >Beiträge &amp; Rechte</a
-        ><a href="https://github.com/jtracht/community-platform" rel="noopener"
-          >GitHub ↗</a
-        >
+        ><a href="/ueber-das-projekt">Über das Projekt</a>
+        <details class="more-links">
+          <summary>Mehr</summary>
+          <div class="more-menu">
+            <button id="rules-open" type="button" hidden>
+              Abstimmungsregeln</button
+            ><a href="/beitraege" data-legal="contributions"
+              >Beiträge &amp; Rechte</a
+            ><a
+              href="https://github.com/jtracht/community-platform"
+              rel="noopener"
+              >GitHub</a
+            >
+          </div>
+        </details>
       </nav>
-      <button id="motion-toggle" type="button" aria-pressed="false">
-        Bewegung pausieren
+      <button
+        id="donate-open"
+        class="donate-icon"
+        type="button"
+        aria-label="Projekt unterstützen"
+        title="Projekt unterstützen"
+      >
+        <svg
+          viewBox="0 0 24 24"
+          width="19"
+          height="19"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="1.5"
+          aria-hidden="true"
+        >
+          <path
+            d="M20.5 5.5a5 5 0 0 0-7.1 0L12 7l-1.4-1.5a5 5 0 0 0-7.1 7.1L12 21l8.5-8.4a5 5 0 0 0 0-7.1Z"
+          />
+        </svg>
       </button>
     </footer>
+    <dialog id="donate-dialog">
+      <h2>Projekt unterstützen</h2>
+      <p>Spenden werden noch vorbereitet. Aktuell ist keine Zahlung möglich.</p>
+      <button id="donate-close" type="button" class="secondary">
+        Schließen
+      </button>
+    </dialog>
+    <dialog id="rules-dialog">
+      <h2>Abstimmungsregeln</h2>
+      <div id="rules-content"></div>
+      <button id="rules-close" type="button">Schließen</button>
+    </dialog>
     <dialog id="legal">
       <h2 id="legal-title"></h2>
       <p id="legal-text" class="preserve"></p>
