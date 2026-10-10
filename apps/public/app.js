@@ -573,3 +573,32 @@ document.querySelector("#rules-open").onclick = () =>
   document.querySelector("#rules-dialog").showModal();
 document.querySelector("#rules-close").onclick = () =>
   document.querySelector("#rules-dialog").close();
+
+const moreLinks = document.querySelector(".more-links"),
+  moreMenu = moreLinks.querySelector(".more-menu"),
+  moreToggle = moreLinks.querySelector("summary");
+function positionMoreMenu() {
+  if (!moreLinks.open) return;
+  moreMenu.style.setProperty("--menu-shift", "0px");
+  const bounds = moreMenu.getBoundingClientRect();
+  const shift = bounds.left < 16
+    ? 16 - bounds.left
+    : Math.min(0, document.documentElement.clientWidth - 16 - bounds.right);
+  moreMenu.style.setProperty("--menu-shift", shift + "px");
+}
+moreLinks.addEventListener("toggle", positionMoreMenu);
+window.addEventListener("resize", positionMoreMenu);
+document.addEventListener("click", (event) => {
+  if (!moreLinks.contains(event.target) || event.target.closest(".more-menu a, .more-menu button"))
+    moreLinks.open = false;
+});
+document.addEventListener("focusin", (event) => {
+  if (!moreLinks.contains(event.target)) moreLinks.open = false;
+});
+moreLinks.addEventListener("keydown", (event) => {
+  if (event.key === "Escape" && moreLinks.open) {
+    moreLinks.open = false;
+    moreToggle.focus();
+    event.preventDefault();
+  }
+});

@@ -5,6 +5,8 @@
   color: #eceff4;
   background: #090b0f;
   min-height: 100svh;
+  min-height: 100dvh;
+  --page-gutter: clamp(16px, 3vw, 28px);
   display: flex;
   flex-direction: column;
   isolation: isolate;
@@ -89,11 +91,13 @@
   width: 100%;
   max-width: 760px;
   margin: auto;
-  padding: clamp(44px, 8vh, 96px) 28px 32px;
+  padding: max(clamp(32px, 8vh, 96px), env(safe-area-inset-top)) max(var(--page-gutter), env(safe-area-inset-right)) 24px max(var(--page-gutter), env(safe-area-inset-left));
   min-height: auto;
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 .survey-stage h1 {
-  font-size: clamp(32px, 4.5vw, 50px);
+  font-size: clamp(28px, 4.5vw, 50px);
   font-weight: 530;
   line-height: 1.14;
   letter-spacing: -0.045em;
@@ -211,13 +215,15 @@
 .survey-stage footer {
   width: 100%;
   max-width: none;
-  padding: 20px 28px;
+  padding: 16px max(var(--page-gutter), env(safe-area-inset-right)) max(16px, env(safe-area-inset-bottom)) max(var(--page-gutter), env(safe-area-inset-left));
   border: 0;
   color: #969fab;
   margin: 0;
   font-size: 11px;
 }
 .survey-stage footer nav {
+  min-width: 0;
+  flex: 1;
   gap: 4px 18px;
   align-items: center;
 }
@@ -252,6 +258,10 @@
   color: #eef0fa;
   border-color: #6b7b92;
   box-shadow: 0 25px 100px #0009;
+  max-height: calc(100dvh - 32px);
+  overflow-y: auto;
+  overflow-wrap: anywhere;
+  padding: clamp(18px, 4vw, 30px);
 }
 .survey-stage dialog::backdrop {
   background: #03060ac9;
@@ -268,7 +278,7 @@
 }
 @media (max-width: 640px) {
   .survey-stage main {
-    padding: 40px 20px 20px;
+    padding-top: max(32px, env(safe-area-inset-top));
   }
   .survey-stage .panel {
     padding: 18px;
@@ -276,9 +286,6 @@
   }
   .survey-stage .description {
     font-size: 14px;
-  }
-  .survey-stage footer {
-    padding: 16px 20px;
   }
   .frame {
     opacity: 0.45;
@@ -333,6 +340,7 @@
   cursor: pointer;
   list-style: none;
   padding: 8px 0;
+  min-height: 44px;
 }
 .more-links summary::after {
   content: " +";
@@ -344,7 +352,11 @@
   position: absolute;
   bottom: 100%;
   left: 0;
-  min-width: 180px;
+  width: min(200px, calc(100vw - 32px));
+  max-height: calc(100dvh - 32px);
+  overflow: auto;
+  overflow-wrap: anywhere;
+  transform: translateX(var(--menu-shift, 0px));
   display: grid;
   background: #171e29;
   border: 1px solid #63738a;
@@ -356,8 +368,8 @@
 .survey-stage footer .donate-icon {
   display: grid;
   place-items: center;
-  width: 40px;
-  min-height: 40px;
+  width: 44px;
+  min-height: 44px;
   padding: 0;
   border: 1px solid #ffffff20;
   border-radius: 50%;
@@ -368,20 +380,21 @@
   transition: color 180ms ease, border-color 180ms ease, box-shadow 180ms ease;
 }
 .survey-stage footer .donate-icon:is(:hover, :focus-visible) {
-  color: #ff667d;
-  border-color: #ff667d99;
+  color: #ff385c;
+  border-color: transparent;
   box-shadow: 0 0 16px #ff385c40;
 }
 .donate-icon svg {
   transition: filter 180ms ease, fill 180ms ease;
 }
 .donate-icon:is(:hover, :focus-visible) svg {
-  fill: #ff385c26;
+  fill: currentColor;
   filter: drop-shadow(0 0 5px #ff385cb3);
 }
 .project-stats {
   display: flex;
-  gap: 40px;
+  flex-wrap: wrap;
+  gap: 20px 40px;
   margin: 30px 0;
 }
 .project-stats strong {
@@ -520,11 +533,13 @@
   font-size: 12px;
 }
 .survey-stage .donation-panel {
+  --support-bottom: max(clamp(16px, 12dvh, 76px), calc(16px + env(safe-area-inset-bottom)));
   position: fixed;
-  bottom: 76px;
-  right: 28px;
+  bottom: var(--support-bottom);
+  right: max(var(--page-gutter), env(safe-area-inset-right));
   width: min(570px, calc(100vw - 32px));
-  max-height: calc(100svh - 110px);
+  max-width: calc(100% - max(var(--page-gutter), env(safe-area-inset-left)) - max(var(--page-gutter), env(safe-area-inset-right)));
+  max-height: calc(100dvh - var(--support-bottom) - max(16px, env(safe-area-inset-top)));
   overflow: auto;
   background: #151d29;
   border: 1px solid #73839b;
@@ -532,6 +547,8 @@
   padding: 24px;
   box-shadow: 0 20px 80px #000b;
   z-index: 20;
+  overscroll-behavior: contain;
+  overflow-wrap: anywhere;
 }
 .support-heading {
   display: flex;
@@ -555,13 +572,37 @@
 }
 @media (max-width: 640px) {
   .survey-stage .donation-panel {
-    right: 16px;
-    bottom: 72px;
     padding: 18px;
   }
 }
 @media (prefers-reduced-motion: reduce) {
   .star-origin {
     filter: none;
+  }
+}
+.survey-stage fieldset,
+.survey-stage .option span,
+.survey-stage .rank-row span,
+.survey-stage .result-line span {
+  min-width: 0;
+}
+.survey-stage .rank-row button,
+.survey-stage .result-line strong {
+  flex-shrink: 0;
+}
+.survey-stage .result-line strong {
+  white-space: nowrap;
+}
+.survey-stage input:not([type="radio"]):not([type="checkbox"]),
+.survey-stage textarea,
+.survey-stage select {
+  font-size: 16px;
+}
+@media (max-height: 500px) {
+  .survey-stage main {
+    padding-top: max(24px, env(safe-area-inset-top));
+  }
+  .survey-stage .donation-panel {
+    padding: 16px;
   }
 }
