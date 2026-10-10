@@ -13,11 +13,13 @@
     <script src="/assets/vendor/motion.js" defer></script>
     <script src="/assets/app.js" defer></script>
     <script src="/assets/design.js" defer></script>
+    <script src="/assets/support.js" defer></script>
   </head>
   <body class="survey-stage">
     <div class="atmosphere" aria-hidden="true">
       <div class="depth-scene">
         <div class="orb orb-main">
+          <div class="star-origin"></div>
           <div class="orb-skin"></div>
           <div class="planet-rim"></div>
           <div class="orb-lines"><i></i><i></i><i></i></div>
@@ -55,6 +57,8 @@
       </nav>
       <button
         id="donate-open"
+        aria-expanded="false"
+        aria-controls="donation-panel"
         class="donate-icon"
         type="button"
         aria-label="Projekt unterstützen"
@@ -75,13 +79,44 @@
         </svg>
       </button>
     </footer>
-    <dialog id="donate-dialog">
-      <h2>Projekt unterstützen</h2>
-      <p>Spenden werden noch vorbereitet. Aktuell ist keine Zahlung möglich.</p>
-      <button id="donate-close" type="button" class="secondary">
-        Schließen
-      </button>
-    </dialog>
+    <section
+      id="donation-panel"
+      class="donation-panel"
+      aria-label="Projekt unterstützen"
+      hidden
+    >
+      <div class="support-heading">
+        <h2>Projekt unterstützen</h2>
+        <button
+          id="donate-close"
+          type="button"
+          class="secondary"
+          aria-label="Spendenbereich schließen"
+        >
+          ×
+        </button>
+      </div>
+      <p id="support-message" role="status">Zahlung wird vorbereitet.</p>
+      <form id="support-form" hidden>
+        <label class="field"
+          ><span>Betrag in Euro</span
+          ><input
+            id="support-amount"
+            type="number"
+            min="1"
+            max="1000"
+            step="0.01"
+            value="5"
+            required
+        /></label>
+        <p class="hint">
+          Beim Öffnen des Zahlungsformulars wird Stripe geladen. Zahlungsdaten
+          verarbeitet Stripe. <a href="/datenschutz">Datenschutz</a>
+        </p>
+        <button class="primary" type="submit">Zahlung mit Stripe öffnen</button>
+      </form>
+      <div id="stripe-checkout"></div>
+    </section>
     <dialog id="rules-dialog">
       <h2>Abstimmungsregeln</h2>
       <div id="rules-content"></div>

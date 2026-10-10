@@ -459,3 +459,87 @@
     top: 6%;
   }
 }
+.star-origin {
+  position: absolute;
+  inset: -10%;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle at 64% 24%,
+    #fff9ee 0%,
+    #ecf4ffe0 1%,
+    #c5deff99 4%,
+    #87b4e545 12%,
+    #506c8f18 28%,
+    transparent 44%
+  );
+  filter: blur(18px);
+  transform: translateZ(8px);
+  mix-blend-mode: screen;
+  opacity: 0.65;
+}
+.orb-main .orb-skin {
+  opacity: 0.9;
+  background: radial-gradient(
+    circle at var(--light-x) var(--light-y),
+    #99b5d33d 0,
+    #30445ab3 26%,
+    #0e1722e5 52%,
+    #06090efa 76%
+  );
+}
+.planet-rim {
+  opacity: 1;
+  filter: drop-shadow(0 0 8px #bad8ff40);
+}
+.survey-stage .submit-count {
+  margin: 12px 0 0;
+  text-align: center;
+  color: #aeb9c8;
+  font-size: 12px;
+}
+.survey-stage .donation-panel {
+  position: fixed;
+  bottom: 76px;
+  right: 28px;
+  width: min(570px, calc(100vw - 32px));
+  max-height: calc(100svh - 110px);
+  overflow: auto;
+  background: #151d29;
+  border: 1px solid #73839b;
+  border-radius: 14px;
+  padding: 24px;
+  box-shadow: 0 20px 80px #000b;
+  z-index: 20;
+}
+.support-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+}
+.support-heading h2 {
+  margin: 0;
+  font-size: 20px;
+}
+.support-heading button {
+  min-width: 40px;
+  min-height: 40px;
+}
+#stripe-checkout {
+  margin-top: 16px;
+}
+.bar-fill {
+  transition: width 0.45s ease-out;
+}
+@media (max-width: 640px) {
+  .survey-stage .donation-panel {
+    right: 16px;
+    bottom: 72px;
+    padding: 18px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .star-origin {
+    filter: none;
+  }
+}

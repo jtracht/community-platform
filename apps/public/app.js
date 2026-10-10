@@ -94,6 +94,11 @@ function showResults(data, type) {
     line.append(el("span", item.label), el("strong", `${item.percent} %`));
     const bar = el("div", undefined, "bar"),
       fill = el("div", undefined, "bar-fill");
+    bar.setAttribute("role", "progressbar");
+    bar.setAttribute("aria-label", item.label);
+    bar.setAttribute("aria-valuemin", "0");
+    bar.setAttribute("aria-valuemax", "100");
+    bar.setAttribute("aria-valuenow", String(item.percent));
     fill.style.setProperty("--value", item.percent + "%");
     bar.append(fill);
     row.append(line, bar);
@@ -131,18 +136,15 @@ function render(data) {
     return;
   }
   const p = data.poll;
-  root.append(el("h1", p.title), el("p", p.description, "description"));
+  root.append(el("h1", p.title));
+  if (
+    p.description &&
+    p.description !==
+      "Wir starten mit einer Frage. Du entscheidest mit, welche Richtung wir gemeinsam einschlagen. Wähle bis zu zwei Vorschläge."
+  )
+    root.append(el("p", p.description, "description"));
   const meta = el("div", undefined, "meta");
-  meta.append(
-    timer(p),
-    el(
-      "span",
-      new Intl.NumberFormat("de-DE").format(
-        data.participationCount ?? data.results?.total ?? 0,
-      ) + " Stimmen",
-      "vote-count",
-    ),
-  );
+  meta.append(timer(p));
   root.append(meta);
   const scheduleBox = el("section", undefined, "panel");
   root.append(scheduleBox);
@@ -399,6 +401,15 @@ function render(data) {
   const submit = el("button", "Stimme abgeben →", "primary");
   submit.type = "submit";
   form.append(submit);
+  form.append(
+    el(
+      "p",
+      "Bereits " +
+        new Intl.NumberFormat("de-DE").format(data.participationCount ?? 0) +
+          ((data.participationCount ?? 0) === 1 ? " Stimme" : " Stimmen"),
+      "vote-count submit-count",
+    ),
+  );
   form.onsubmit = async (e) => {
     e.preventDefault();
     message.textContent = "";
@@ -562,22 +573,3 @@ document.querySelector("#rules-open").onclick = () =>
   document.querySelector("#rules-dialog").showModal();
 document.querySelector("#rules-close").onclick = () =>
   document.querySelector("#rules-dialog").close();
-
-document.querySelector("#donate-open").onclick = async () => {
-  const button = document.querySelector("#donate-open");
-  button.disabled = true;
-  try {
-    const support = await api("/api/support");
-    if (support.url) {
-      location.assign(support.url);
-      return;
-    }
-    document.querySelector("#donate-dialog").showModal();
-  } catch {
-    document.querySelector("#donate-dialog").showModal();
-  } finally {
-    button.disabled = false;
-  }
-};
-document.querySelector("#donate-close").onclick = () =>
-  document.querySelector("#donate-dialog").close();

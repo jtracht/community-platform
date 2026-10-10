@@ -1,6 +1,7 @@
 import type { FastifyInstance } from "fastify";
 import { readFile } from "node:fs/promises";
 import { rows } from "../../../packages/database/index.js";
+import { supportConfig } from "./support.js";
 function escape(value: string) {
   return value.replace(
     /[&<>"']/g,
@@ -31,7 +32,12 @@ export async function legalRoutes(app: FastifyInstance) {
     } catch {
       /* Missing or invalid links stay unavailable. */
     }
-    return { url };
+    const config = supportConfig();
+    return {
+      url,
+      embedded: Boolean(config),
+      publishableKey: config?.publishableKey ?? null,
+    };
   });
   app.get("/ueber-das-projekt", async (_, reply) =>
     reply

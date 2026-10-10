@@ -13,6 +13,18 @@
     { opacity: [0, 1] },
     { duration: reduced.matches ? 0 : 0.7 },
   );
+  if (!reduced.matches) {
+    window.Motion?.animate(
+      ".orb-skin",
+      { opacity: [0, 0.9] },
+      { duration: 3.8, ease: "easeOut" },
+    );
+    window.Motion?.animate(
+      ".star-origin",
+      { opacity: [1, 0.65] },
+      { duration: 3.8, ease: "easeOut" },
+    );
+  }
   function enabled() {
     return !reduced.matches && fine.matches && !document.hidden;
   }

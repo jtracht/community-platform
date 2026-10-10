@@ -35,6 +35,7 @@ import { workflowRoutes } from "./workflow.js";
 import { githubManagementRoutes } from "./github.js";
 import { sharedLimit } from "./limits.js";
 import { legalRoutes } from "./legal.js";
+import { supportRoutes } from "./support.js";
 type Admin = {
   id: string;
   email: string;
@@ -71,10 +72,25 @@ export async function buildApp() {
     contentSecurityPolicy: {
       directives: {
         defaultSrc: ["'self'"],
-        scriptSrc: ["'self'"],
+        scriptSrc: [
+          "'self'",
+          "https://js.stripe.com",
+          "https://*.js.stripe.com",
+          "https://checkout.stripe.com",
+        ],
         styleSrc: ["'self'"],
-        imgSrc: ["'self'", "data:"],
-        connectSrc: ["'self'"],
+        imgSrc: ["'self'", "data:", "https://*.stripe.com"],
+        connectSrc: [
+          "'self'",
+          "https://api.stripe.com",
+          "https://checkout.stripe.com",
+        ],
+        frameSrc: [
+          "https://js.stripe.com",
+          "https://*.js.stripe.com",
+          "https://hooks.stripe.com",
+          "https://checkout.stripe.com",
+        ],
         formAction: ["'self'"],
         frameAncestors: ["'none'"],
       },
@@ -682,6 +698,7 @@ export async function buildApp() {
   await workflowRoutes(app);
   await githubManagementRoutes(app);
   await legalRoutes(app);
+  await supportRoutes(app);
   return app;
 }
 async function githubRoutes(app: FastifyInstance) {
