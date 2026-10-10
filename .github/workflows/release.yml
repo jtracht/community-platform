@@ -43,7 +43,8 @@ jobs:
       - run: npm run build
       - name: Package reproducible candidate
         run: |
-          tar -czf community-platform.tar.gz dist apps/public apps/admin packages/database/migrations package.json package-lock.json docs LICENSE
+          SOURCE_DATE_EPOCH="$(git log -1 --format=%ct)"
+          tar --sort=name --mtime="@$SOURCE_DATE_EPOCH" --owner=0 --group=0 --numeric-owner -cf - dist apps/public apps/admin packages/database/migrations package.json package-lock.json docs LICENSE README.md | gzip -n > community-platform.tar.gz
           sha256sum community-platform.tar.gz > SHA256SUMS
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:

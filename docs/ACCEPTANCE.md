@@ -19,7 +19,7 @@ Kein produktionsfertiges Release. Ein ausführbarer MVP wurde implementiert; die
 | Keine Zusatzbereiche | Öffentliche Oberfläche ausschließlich Umfrage/Übergang/Pflichtlinks |
 | Tests/Datenschutz | 11 Unit/MySQL/API-Tests sowie 5 mobile Browser-/Accessibilitytests lokal bestanden; Browserexport/-löschung implementiert; Aufbewahrung und umfassende Securityabnahme ausstehend |
 | Hostinginstallation | Anleitung vorhanden; konkreter netcup-Vertrag noch nicht verifiziert |
-| Open Source | Apache-2.0 freigegeben, öffentliches Repository, Richtlinien, Codeowner, CI; Branchschutz und öffentlicher Release werden gesondert geprüft |
+| Open Source | Apache-2.0, öffentliches Repository, Richtlinien, Codeowner, CI, main-Branchschutz, Owner-Tagregeln, Secret-Scanning und Release-Reviewer eingerichtet; erster öffentlicher Release noch nicht freigegeben |
 
 ## Nächster Meilenstein
 Hostingverifikation und rechtliche Betreiberkonfiguration; fehlende MVP-Schutz-/Betriebsnachweise abschließen. Danach optional separater früher MVP-Livegang nur mit ausdrücklich akzeptierter reduzierter Abnahme. Das vollständige erste Release erst nach allen Masterprompt-Kriterien.
