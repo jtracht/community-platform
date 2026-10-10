@@ -15,14 +15,14 @@
   );
   if (!reduced.matches) {
     window.Motion?.animate(
-      ".orb-skin",
-      { opacity: [0, 0.9] },
-      { duration: 3.8, ease: "easeOut" },
+      ".star-surface",
+      { opacity: [0, 0.58], scale: [0.96, 1] },
+      { duration: 2.2, ease: "easeOut" },
     );
     window.Motion?.animate(
-      ".star-origin",
-      { opacity: [1, 0.65] },
-      { duration: 3.8, ease: "easeOut" },
+      ".star-corona",
+      { opacity: [0, 0.55] },
+      { duration: 2.2, ease: "easeOut" },
     );
   }
   function enabled() {

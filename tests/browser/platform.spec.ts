@@ -91,6 +91,8 @@ for (const type of ["single", "multiple", "ranking", "text"] as const) {
     );
     expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
     await expect(page.locator(".submit-count")).toHaveText("Bereits 0 Stimmen");
+    await expect(page.locator(".countdown")).toHaveCount(0);
+    const ballot = await page.locator(".ballot-panel").elementHandle();
     if (type === "text") {
       await page
         .getByRole("textbox", { name: "Deine Idee" })
@@ -122,11 +124,17 @@ for (const type of ["single", "multiple", "ranking", "text"] as const) {
     await expect(
       page.getByText("Danke. Deine Stimme wurde gespeichert."),
     ).toBeVisible();
-    await expect(
-      page.getByRole("heading", { name: "Ergebnis", exact: true }),
-    ).toBeVisible();
+    expect(await ballot!.evaluate(node => node.isConnected)).toBe(true);
+    await expect(page.locator(".ballot-panel.vote-complete")).toBeVisible();
+    await expect(page.getByRole("button", { name: "Bereits 1 Stimme", exact: true })).toBeDisabled();
+    await expect(page.locator(".countdown")).toBeVisible();
+    await expect(page.locator('.ballot-panel input, .ballot-panel textarea')).toHaveCount(0);
     if (type === "single" || type === "multiple")
       await expect(page.getByRole("progressbar")).toHaveCount(3);
+    if (type !== "text")
+      await expect(page.locator(".result-option .bar")).toHaveCount(3);
+    if (type === "ranking")
+      await expect(page.locator(".result-option").first()).toContainText("Transparenz");
     await page.reload();
     await expect(
       page.getByRole("button", { name: "Stimme abgeben" }),

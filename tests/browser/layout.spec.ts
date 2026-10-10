@@ -31,7 +31,7 @@ test("Survey, results and overlays fit phones, tablets and wide screens", async 
   let voted = false;
   await page.route("**/api/poll", route => route.fulfill({ json: {
     mode: "poll", poll, voted, participationCount: 123,
-    results: voted ? { total: 123, quorumReached: true, items: options.map((label, index) => ({ label, score: 100 - index, percent: 80 - index * 20 })), tie: false } : null,
+    results: voted ? { total: 123, quorumReached: true, items: options.map((label, index) => ({ id: index, label, score: 100 - index, percent: 80 - index * 20 })), tie: false } : null,
   } }));
   await page.route("**/api/poll/layout-fixture/schedule", route => route.fulfill({ json: [] }));
   await page.route("**/api/support", route => route.fulfill({ json: { embedded: true, publishableKey: "pk_test_fixture" } }));
@@ -90,4 +90,34 @@ test("More menu supports touch dismissal, resizing and Escape", async ({ browser
   await expect(more).not.toHaveAttribute("open", "");
   await expect(toggle).toBeFocused();
   await context.close();
+});
+
+test("Saved ballot keeps its fields and turnout without revealing withheld results", async ({ page }) => {
+  await mockPages(page);
+  const options = ["Einfachheit", "Transparenz", "Zugänglichkeit"];
+  const poll = {
+    id: "visibility-fixture", title: "Welche Richtung wählen wir?", description: "", status: "active", released: false,
+    startsAt: new Date(Date.now() - 60000).toISOString(), endsAt: new Date(Date.now() + 3600000).toISOString(),
+    rules: { type: "multiple", options, participation: "anonymous", visibility: "hidden", version: 1, quorum: 1, tieRule: "shared", minChoices: 1, maxChoices: 2 },
+  };
+  let visible = false;
+  await page.route("**/api/poll", route => route.fulfill({ json: {
+    mode: "poll", poll, voted: true, participationCount: 123,
+    results: visible ? { total: 123, quorumReached: true, items: options.map((label, id) => ({ id, label, score: 123, percent: 100 })), tie: true } : null,
+  } }));
+  await page.route("**/api/poll/visibility-fixture/schedule", route => route.fulfill({ json: [] }));
+  for (const visibility of ["hidden", "after_close", "after_release"]) {
+    poll.rules.visibility = visibility;
+    await page.goto("/");
+    await expect(page.getByRole("button", { name: "Bereits 123 Stimmen", exact: true })).toBeDisabled();
+    await expect(page.locator(".result-option")).toHaveCount(3);
+    await expect(page.getByRole("progressbar")).toHaveCount(0);
+    await expect(page.locator(".result-note")).toBeVisible();
+    await expect(page.locator(".countdown")).toBeVisible();
+  }
+  visible = true;
+  poll.released = true;
+  await page.reload();
+  await expect(page.locator(".result-option .bar")).toHaveCount(3);
+  await expect(page.getByRole("button", { name: "Bereits 123 Stimmen", exact: true })).toBeDisabled();
 });

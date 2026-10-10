@@ -62,69 +62,93 @@ async function api(url, options) {
   if (!r.ok) throw new Error(data.error || "Anfrage fehlgeschlagen.");
   return data;
 }
-function showResults(data, type) {
-  const box = el("section", undefined, "panel");
-  box.append(
-    el("h2", "Ergebnis"),
-    el(
-      "p",
-      `${data.total} gültige Stimmen · Mindestbeteiligung ${data.quorumReached ? "erreicht" : "noch nicht erreicht"}`,
-      "hint",
-    ),
-  );
-  if (type === "ranking")
-    box.append(
-      el(
-        "p",
-        "Borda-Auswertung: N−1 Punkte für Platz 1 bis 0 für den letzten Platz. Prozentwerte beziehen sich je Option auf die maximal möglichen Punkte.",
-        "hint",
-      ),
-    );
-  if (type === "multiple")
-    box.append(
-      el(
-        "p",
-        "Prozentwerte beziehen sich auf gültige Teilnehmende. Bei Mehrfachauswahl kann ihre Summe über 100 % liegen.",
-        "hint",
-      ),
-    );
-  for (const item of [...data.items].sort((a, b) => b.score - a.score)) {
-    const row = el("div", undefined, "result");
-    const line = el("div", undefined, "result-line");
-    line.append(el("span", item.label), el("strong", `${item.percent} %`));
-    const bar = el("div", undefined, "bar"),
-      fill = el("div", undefined, "bar-fill");
-    bar.setAttribute("role", "progressbar");
-    bar.setAttribute("aria-label", item.label);
-    bar.setAttribute("aria-valuemin", "0");
-    bar.setAttribute("aria-valuemax", "100");
-    bar.setAttribute("aria-valuenow", String(item.percent));
-    fill.style.setProperty("--value", item.percent + "%");
-    bar.append(fill);
-    row.append(line, bar);
-    box.append(row);
+function turnout(data) {
+  const count = data.participationCount ?? data.results?.total ?? 0;
+  return new Intl.NumberFormat("de-DE").format(count) +
+    (count === 1 ? " Stimme" : " Stimmen");
+}
+function addResultRules(data) {
+  const box = document.querySelector("#rules-content");
+  box.querySelectorAll(".result-rule").forEach(item => item.remove());
+  if (!data.results) return;
+  const note = text => box.append(el("p", text, "result-rule"));
+  note("Mindestbeteiligung " + (data.results.quorumReached ? "erreicht." : "noch nicht erreicht."));
+  if (data.poll.rules.type === "multiple")
+    note("Prozentwerte beziehen sich auf gültige Teilnehmende. Bei Mehrfachauswahl kann ihre Summe über 100 % liegen.");
+  if (data.poll.rules.type === "ranking")
+    note("Borda-Auswertung: N−1 Punkte für Platz 1 bis 0 für den letzten Platz. Prozentwerte beziehen sich je Option auf die maximal möglichen Punkte.");
+  if (data.results.tie)
+    note(data.results.runoffRequired ? "Gleichstand: Eine Stichwahl muss vom Product Owner vorbereitet werden." : "Gleichstand: gleiche Priorität.");
+}
+function showBallotOutcome(data, box, order) {
+  const p = data.poll;
+  addResultRules(data);
+  box ??= el("section", undefined, "panel ballot-panel");
+  box.classList.add("vote-complete");
+  box.setAttribute("aria-label", data.results ? "Abstimmungsergebnis" : (data.voted ? "Gespeicherte Abstimmung" : "Abstimmung beendet"));
+  let fs = box.querySelector("fieldset");
+  if (!fs) {
+    fs = el("fieldset");
+    box.append(fs);
   }
-  if (data.tie)
-    box.append(
-      el(
-        "p",
-        data.runoffRequired
-          ? "Gleichstand: Eine Stichwahl muss vom Product Owner vorbereitet werden."
-          : "Gleichstand: gleiche Priorität.",
-        "hint",
-      ),
-    );
-  if (!data.items.length)
-    box.append(
-      el(
-        "p",
-        "Freitextbeiträge werden geschützt geprüft. Die Anzahl eingegangener Beiträge wird angezeigt.",
-      ),
-    );
+  fs.replaceChildren(el("legend", data.results
+    ? (p.released ? "Ergebnis" : "Zwischenstand")
+    : (data.voted ? "Stimme gespeichert" : "Abstimmung beendet")));
+  const items = new Map((data.results?.items ?? []).map(item => [item.id, item]));
+  for (const id of order ?? p.rules.options.map((_, index) => index)) {
+    const option = el("div", undefined, "option result-option"),
+      line = el("div", undefined, "result-line");
+    line.append(el("span", p.rules.options[id]));
+    const item = items.get(id);
+    if (item) {
+      line.append(el("strong", new Intl.NumberFormat("de-DE").format(item.percent) + " %"));
+      const bar = el("div", undefined, "bar"), fill = el("div", undefined, "bar-fill");
+      bar.setAttribute("role", "progressbar");
+      bar.setAttribute("aria-label", p.rules.options[id]);
+      bar.setAttribute("aria-valuemin", "0");
+      bar.setAttribute("aria-valuemax", "100");
+      bar.setAttribute("aria-valuenow", String(item.percent));
+      fill.style.setProperty("--value", item.percent + "%");
+      bar.append(fill);
+      option.append(bar);
+    }
+    option.append(line);
+    fs.append(option);
+  }
+  if (p.rules.type === "text")
+    fs.append(el("p", "Ideen werden vor ihrer Veröffentlichung geprüft.", "hint"));
+  let button = box.querySelector(".vote-submit");
+  if (!button) {
+    button = el("button", undefined, "primary vote-submit");
+    box.append(button);
+  }
+  button.type = "button";
+  button.disabled = true;
+  button.textContent = "Bereits " + turnout(data);
+  let meta = box.querySelector(".submit-count");
+  if (!meta) {
+    meta = el("p", undefined, "submit-count");
+    box.append(meta);
+  }
+  meta.replaceChildren();
+  if (data.voted) meta.append(timer(p));
+  else meta.hidden = true;
+  if (!data.results)
+    fs.append(el("p", p.rules.visibility === "after_close"
+      ? "Ergebnisse nach Ende der Abstimmung."
+      : p.rules.visibility === "after_release"
+        ? "Ergebnisse nach Freigabe."
+        : "Die Ergebnisse sind nicht öffentlich sichtbar.", "hint result-note"));
+  if (data.voted) {
+    message.textContent = "Danke. Deine Stimme wurde gespeichert.";
+    message.classList.add("success");
+  }
   return box;
 }
 function render(data) {
   clearInterval(countdown);
+  message.textContent = "";
+  message.classList.remove("success");
   root.replaceChildren();
   document.querySelector("#rules-open").hidden = data.mode === "waiting";
   document.querySelector("#rules-content").replaceChildren();
@@ -143,9 +167,6 @@ function render(data) {
       "Wir starten mit einer Frage. Du entscheidest mit, welche Richtung wir gemeinsam einschlagen. Wähle bis zu zwei Vorschläge."
   )
     root.append(el("p", p.description, "description"));
-  const meta = el("div", undefined, "meta");
-  meta.append(timer(p));
-  root.append(meta);
   const scheduleBox = el("section", undefined, "panel");
   root.append(scheduleBox);
   scheduleBox.hidden = true;
@@ -210,36 +231,8 @@ function render(data) {
           : "Bei Gleichstand gilt gleiche Priorität."),
     ),
   );
-  if (data.results) {
-    if (!p.released)
-      root.append(
-        el(
-          "p",
-          "Vorläufiger Stand: Die Auswertung ist noch nicht abschließend freigegeben.",
-          "hint",
-        ),
-      );
-    root.append(showResults(data.results, p.rules.type));
-  }
-  if (data.voted) {
-    root.append(
-      el("section", "Danke. Deine Stimme wurde gespeichert.", "panel"),
-    );
-    if (!data.results)
-      root.append(
-        el(
-          "p",
-          "Ergebnisse werden gemäß den festgelegten Sichtbarkeitsregeln angezeigt.",
-          "hint",
-        ),
-      );
-    return;
-  }
-  if (data.mode !== "poll") {
-    if (!data.results)
-      root.append(
-        el("p", "Die Ergebnisse sind derzeit nicht freigegeben.", "panel"),
-      );
+  if (data.voted || data.mode !== "poll") {
+    root.append(showBallotOutcome(data));
     return;
   }
   if (p.rules.participation !== "anonymous" && !data.verified) {
@@ -287,7 +280,7 @@ function render(data) {
     root.append(form);
     return;
   }
-  const form = el("form", undefined, "panel"),
+  const form = el("form", undefined, "panel ballot-panel"),
     fs = el("fieldset");
   fs.append(
     el(
@@ -398,15 +391,13 @@ function render(data) {
     }
   }
   form.append(fs);
-  const submit = el("button", "Stimme abgeben →", "primary");
+  const submit = el("button", "Stimme abgeben →", "primary vote-submit");
   submit.type = "submit";
   form.append(submit);
   form.append(
     el(
       "p",
-      "Bereits " +
-        new Intl.NumberFormat("de-DE").format(data.participationCount ?? 0) +
-          ((data.participationCount ?? 0) === 1 ? " Stimme" : " Stimmen"),
+      "Bereits " + turnout(data),
       "vote-count submit-count",
     ),
   );
@@ -422,16 +413,17 @@ function render(data) {
           : p.rules.type === "ranking"
             ? order
             : fd.getAll("choice").map(Number);
-      render(
-        await api("/api/poll/" + p.id + "/vote", {
+      const outcome = await api("/api/poll/" + p.id + "/vote", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             answer,
             termsAccepted: fd.get("terms") === "on",
           }),
-        }),
-      );
+        });
+      if (outcome.poll?.id === p.id && outcome.voted)
+        showBallotOutcome(outcome, form, p.rules.type === "ranking" ? order : undefined);
+      else render(outcome);
     } catch (err) {
       message.textContent = err.message;
       submit.disabled = false;
