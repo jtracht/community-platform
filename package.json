@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
+  "license": "Apache-2.0",
   "description": "Modular community platform for transparent surveys, participatory decisions and owner-approved development.",
   "engines": {
     "node": ">=22 <25"
@@ -12,6 +13,7 @@
     "build": "tsc",
     "start": "node --env-file=.env dist/apps/server/src/main.js",
     "test": "tsx --test tests/*.test.ts",
+    "test:browser": "playwright test",
     "check": "tsc --noEmit",
     "migrate": "tsx scripts/migrate.ts",
     "setup:admin": "tsx scripts/setup-admin.ts"
@@ -27,6 +29,8 @@
     "zod": "^4.0.0"
   },
   "devDependencies": {
+    "@axe-core/playwright": "^4.13.0",
+    "@playwright/test": "^1.64.0",
     "@types/node": "^24.0.0",
     "tsx": "^4.0.0",
     "typescript": "^5.0.0"

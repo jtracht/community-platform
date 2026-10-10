@@ -1,6 +1,55 @@
 <!doctype html>
-<html lang="de"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Gemeinsam entscheiden · Community-Umfrage</title><meta name="description" content="Eine modulare Communityplattform: Gemeinsam Ideen sammeln, abstimmen und die nächsten Funktionen bestimmen. Eine offizielle Umfrage, transparente Regeln und bewusste Entscheidungen."><link rel="stylesheet" href="/assets/style.css"><script src="/assets/app.js" defer></script></head>
-<body><header class="site-head"><a href="/" aria-label="Startseite"><span class="mark" aria-hidden="true">↗</span> Gemeinsam entscheiden</a><span class="quiet">Eine Frage. Deine Stimme.</span></header>
-<main id="main"><div id="poll" aria-live="polite"><p class="eyebrow">COMMUNITY-UMFRAGE</p><h1>Wir entscheiden gemeinsam.</h1><p>Umfrage wird geladen …</p></div><p id="message" role="status"></p></main>
-<footer><span>Die nächsten Schritte bestimmt die Community.</span><nav aria-label="Basisinformationen"><button data-legal="imprint">Impressum</button><button data-legal="privacy">Datenschutz</button><button data-legal="contributions">Beiträge &amp; Rechte</button><a href="https://github.com/jtracht/community-platform" rel="noopener">GitHub ↗</a></nav></footer>
-<dialog id="legal"><h2 id="legal-title"></h2><p id="legal-text" class="preserve"></p><button id="close-legal">Schließen</button></dialog></body></html>
+<html lang="de">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Gemeinsam entscheiden · Community-Umfrage</title>
+    <meta
+      name="description"
+      content="Eine modulare Communityplattform: Gemeinsam Ideen sammeln, abstimmen und die nächsten Funktionen bestimmen. Eine offizielle Umfrage, transparente Regeln und bewusste Entscheidungen."
+    />
+    <link rel="stylesheet" href="/assets/style.css" />
+    <script src="/assets/app.js" defer></script>
+  </head>
+  <body>
+    <header class="site-head">
+      <a href="/" aria-label="Startseite"
+        ><span class="mark" aria-hidden="true">↗</span> Gemeinsam entscheiden</a
+      ><span class="quiet">Eine Frage. Deine Stimme.</span>
+    </header>
+    <main id="main">
+      <div id="poll" aria-live="polite">
+        <p class="eyebrow">COMMUNITY-UMFRAGE</p>
+        <h1>Wir entscheiden gemeinsam.</h1>
+        <p>Umfrage wird geladen …</p>
+      </div>
+      <p id="message" role="status"></p>
+    </main>
+    <footer>
+      <span>Die nächsten Schritte bestimmt die Community.</span>
+      <nav aria-label="Basisinformationen">
+        <button data-legal="imprint">Impressum</button
+        ><button data-legal="privacy">Datenschutz</button
+        ><button data-legal="contributions">Beiträge &amp; Rechte</button
+        ><a href="https://github.com/jtracht/community-platform" rel="noopener"
+          >GitHub ↗</a
+        >
+      </nav>
+    </footer>
+    <dialog id="legal">
+      <h2 id="legal-title"></h2>
+      <p id="legal-text" class="preserve"></p>
+      <div id="privacy-actions" hidden>
+        <p class="hint">
+          Diese Verfahren betreffen die Beiträge dieses Browsers. Nach einem
+          Cookieverlust ist eine Zuordnung unter Umständen nicht mehr möglich.
+        </p>
+        <a href="/api/privacy/export" download>Meine Daten exportieren</a
+        ><button id="delete-data" class="secondary">
+          Meine Rohdaten löschen
+        </button>
+      </div>
+      <button id="close-legal">Schließen</button>
+    </dialog>
+  </body>
+</html>

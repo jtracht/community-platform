@@ -25,7 +25,7 @@ Für Gemeinschaften, die ihre digitale Plattform Schritt für Schritt durch Umfr
 
 **Sind anonyme Stimmen manipulationssicher?** Nein. Der MVP verhindert Mehrfachstimmen derselben Browseridentität; neue Geräte oder gelöschte Cookies bleiben eine Grenze. E-Mail- und Kontoverifizierung sind geplant.
 
-**Ist die Plattform Open Source?** Sie wird dafür vorbereitet. Die endgültige Softwarelizenz ist noch nicht genehmigt; derzeit ist keine Open-Source-Lizenz erteilt.
+**Ist die Plattform Open Source?** Ja. Der Product Owner hat Apache-2.0 für den Quellcode freigegeben. Communitybeiträge und Betreiber-Rechtstexte werden gesondert behandelt.
 
 **Wer genehmigt Veröffentlichungen?** Der Product Owner. Ein geschlossenes GitHub Issue löst keine Produktionsfreigabe aus.
 

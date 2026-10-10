@@ -17,9 +17,9 @@ Kein produktionsfertiges Release. Ein ausführbarer MVP wurde implementiert; die
 | Zugänge | scrypt, TOTP, Replay-Schutz, sessions, Origin/CSP/Rate-Limit; Rollenverwaltung/-granularität und Recovery offen |
 | Module | Geprüfte Registry, Abhängigkeiten/Freigabetests; voll integrierte Aktivierung, Health/Update/Rollback offen |
 | Keine Zusatzbereiche | Öffentliche Oberfläche ausschließlich Umfrage/Übergang/Pflichtlinks |
-| Tests/Datenschutz | Unit/MySQL/API; Browser-/Accessibility-/Securityabnahme und Datenschutzverfahren noch ausstehend |
+| Tests/Datenschutz | 11 Unit/MySQL/API-Tests sowie 5 mobile Browser-/Accessibilitytests lokal bestanden; Browserexport/-löschung implementiert; Aufbewahrung und umfassende Securityabnahme ausstehend |
 | Hostinginstallation | Anleitung vorhanden; konkreter netcup-Vertrag noch nicht verifiziert |
-| Open Source | Richtlinien, Codeowner, CI; Lizenzfreigabe, Branchschutz und öffentlicher Release offen |
+| Open Source | Apache-2.0 freigegeben, öffentliches Repository, Richtlinien, Codeowner, CI; Branchschutz und öffentlicher Release werden gesondert geprüft |
 
 ## Nächster Meilenstein
 Hostingverifikation und rechtliche Betreiberkonfiguration; fehlende MVP-Schutz-/Betriebsnachweise abschließen. Danach optional separater früher MVP-Livegang nur mit ausdrücklich akzeptierter reduzierter Abnahme. Das vollständige erste Release erst nach allen Masterprompt-Kriterien.

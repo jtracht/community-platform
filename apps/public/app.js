@@ -1,19 +1,299 @@
-const root=document.querySelector('#poll'),message=document.querySelector('#message');
-function el(tag,text,cls){const e=document.createElement(tag);if(text!==undefined)e.textContent=text;if(cls)e.className=cls;return e;}
-async function api(url,options){const r=await fetch(url,options);const data=await r.json();if(!r.ok)throw new Error(data.error||'Anfrage fehlgeschlagen.');return data;}
-function showResults(data){const box=el('section',undefined,'panel');box.append(el('h2','Ergebnis'),el('p',`${data.total} gültige Stimmen · Mindestbeteiligung ${data.quorumReached?'erreicht':'noch nicht erreicht'}`,'hint'));for(const item of [...data.items].sort((a,b)=>b.score-a.score)){const row=el('div',undefined,'result');const line=el('div',undefined,'result-line');line.append(el('span',item.label),el('strong',`${item.percent} %`));const bar=el('div',undefined,'bar'),fill=el('div',undefined,'bar-fill');fill.style.setProperty('--value',item.percent+'%');bar.append(fill);row.append(line,bar);box.append(row);}if(data.tie)box.append(el('p',data.runoffRequired?'Gleichstand: Eine Stichwahl muss vom Product Owner vorbereitet werden.':'Gleichstand: gleiche Priorität.','hint'));if(!data.items.length)box.append(el('p','Freitextbeiträge werden geschützt geprüft. Die Anzahl eingegangener Beiträge wird angezeigt.'));return box;}
-function render(data){root.replaceChildren();root.append(el('p',data.mode==='waiting'?'ZWISCHEN ZWEI ENTSCHEIDUNGEN':'COMMUNITY-UMFRAGE','eyebrow'));
- if(data.mode==='waiting'){root.append(el('h1','Der nächste Schritt entsteht gemeinsam.'),el('p',data.message,'description'));return;}
- const p=data.poll;root.append(el('h1',p.title),el('p',p.description,'description'));const meta=el('div',undefined,'meta');meta.append(el('span',p.status==='active'?'● Abstimmung geöffnet':'Abstimmung abgeschlossen'),el('span','Ende: '+new Date(p.endsAt).toLocaleString('de-DE')),el('span','Regelversion '+p.rules.version));root.append(meta);
- if(data.results)root.append(showResults(data.results));
- if(data.voted){root.append(el('section','Danke. Deine Stimme wurde gespeichert.','panel'));if(!data.results)root.append(el('p','Ergebnisse werden gemäß den festgelegten Sichtbarkeitsregeln angezeigt.','hint'));return;}
- if(data.mode!=='poll'){if(!data.results)root.append(el('p','Die Ergebnisse sind derzeit nicht freigegeben.','panel'));return;}
- const form=el('form',undefined,'panel'),fs=el('fieldset');fs.append(el('legend',p.rules.type==='ranking'?'Bringe alle Optionen in deine Reihenfolge.':p.rules.type==='text'?'Welche Idee möchtest du einbringen?':'Wähle deine Antwort.'));let order=p.rules.options.map((_,i)=>i);
- if(p.rules.type==='text'){const input=el('textarea');input.name='answer';input.required=true;input.minLength=3;input.maxLength=2000;input.setAttribute('aria-label','Deine Idee');fs.append(input,el('p','Bitte keine persönlichen oder vertraulichen Informationen eintragen.','hint'));const label=el('label',undefined,'option'),check=el('input');check.type='checkbox';check.name='terms';check.required=true;label.append(check,el('span','Ich stimme den verlinkten Bedingungen für Beiträge und der dort beschriebenen Nutzungserlaubnis zu.'));fs.append(label);}
- else if(p.rules.type==='ranking'){const list=el('ol',undefined,'ranking');function draw(){list.replaceChildren();order.forEach((id,index)=>{const li=el('li',undefined,'rank-row');li.append(el('span',`${index+1}. ${p.rules.options[id]}`));for(const [direction,label] of [[-1,'Nach oben'],[1,'Nach unten']]){const b=el('button',direction===-1?'↑':'↓','secondary');b.type='button';b.setAttribute('aria-label',p.rules.options[id]+': '+label);b.disabled=index+direction<0||index+direction>=order.length;b.onclick=()=>{[order[index],order[index+direction]]=[order[index+direction],order[index]];draw();list.children[index+direction].querySelector(direction===-1?'button':'button:last-child').focus();};li.append(b);}list.append(li);});}draw();fs.append(list);}
- else {p.rules.options.forEach((option,id)=>{const label=el('label',undefined,'option'),input=el('input');input.type=p.rules.type==='single'?'radio':'checkbox';input.name='choice';input.value=id;if(input.type==='radio')input.required=true;label.append(input,el('span',option));fs.append(label);});if(p.rules.type==='multiple')fs.append(el('p',`${p.rules.minChoices} bis ${p.rules.maxChoices} Antworten auswählen.`,'hint'));}
- fs.append(el('p','Anonyme Teilnahme: Eine Stimme je Browser. Das Löschen von Cookies oder weitere Geräte können technisch nicht zuverlässig ausgeschlossen werden.','hint'));form.append(fs);const submit=el('button','Stimme abgeben →','primary');submit.type='submit';form.append(submit);form.onsubmit=async e=>{e.preventDefault();message.textContent='';submit.disabled=true;try{const fd=new FormData(form);const answer=p.rules.type==='text'?fd.get('answer'):p.rules.type==='ranking'?order:fd.getAll('choice').map(Number);render(await api('/api/poll/'+p.id+'/vote',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({answer,termsAccepted:fd.get('terms')==='on'})}));}catch(err){message.textContent=err.message;submit.disabled=false;}};root.append(form);
+const root = document.querySelector("#poll"),
+  message = document.querySelector("#message");
+function el(tag, text, cls) {
+  const e = document.createElement(tag);
+  if (text !== undefined) e.textContent = text;
+  if (cls) e.className = cls;
+  return e;
 }
-document.querySelectorAll('[data-legal]').forEach(button=>button.onclick=async()=>{try{const data=await api('/api/legal');const key=button.dataset.legal;document.querySelector('#legal-title').textContent=button.textContent;document.querySelector('#legal-text').textContent=key==='imprint'?[data.operator,data.address,data.email].filter(Boolean).join('\n')||'Betreiberangaben werden vor dem Livegang ergänzt.':data[key]||'Dieser Text wird vor dem Livegang rechtlich geprüft und konfiguriert.';document.querySelector('#legal').showModal();}catch(e){message.textContent=e.message;}});
-document.querySelector('#close-legal').onclick=()=>document.querySelector('#legal').close();
-api('/api/poll').then(render).catch(e=>{root.replaceChildren(el('h1','Kurz nicht erreichbar.'),el('p','Bitte versuche es später erneut.'));message.textContent=e.message;});
+async function api(url, options) {
+  const r = await fetch(url, options);
+  const data = await r.json();
+  if (!r.ok) throw new Error(data.error || "Anfrage fehlgeschlagen.");
+  return data;
+}
+function showResults(data) {
+  const box = el("section", undefined, "panel");
+  box.append(
+    el("h2", "Ergebnis"),
+    el(
+      "p",
+      `${data.total} gültige Stimmen · Mindestbeteiligung ${data.quorumReached ? "erreicht" : "noch nicht erreicht"}`,
+      "hint",
+    ),
+  );
+  for (const item of [...data.items].sort((a, b) => b.score - a.score)) {
+    const row = el("div", undefined, "result");
+    const line = el("div", undefined, "result-line");
+    line.append(el("span", item.label), el("strong", `${item.percent} %`));
+    const bar = el("div", undefined, "bar"),
+      fill = el("div", undefined, "bar-fill");
+    fill.style.setProperty("--value", item.percent + "%");
+    bar.append(fill);
+    row.append(line, bar);
+    box.append(row);
+  }
+  if (data.tie)
+    box.append(
+      el(
+        "p",
+        data.runoffRequired
+          ? "Gleichstand: Eine Stichwahl muss vom Product Owner vorbereitet werden."
+          : "Gleichstand: gleiche Priorität.",
+        "hint",
+      ),
+    );
+  if (!data.items.length)
+    box.append(
+      el(
+        "p",
+        "Freitextbeiträge werden geschützt geprüft. Die Anzahl eingegangener Beiträge wird angezeigt.",
+      ),
+    );
+  return box;
+}
+function render(data) {
+  root.replaceChildren();
+  root.append(
+    el(
+      "p",
+      data.mode === "waiting"
+        ? "ZWISCHEN ZWEI ENTSCHEIDUNGEN"
+        : "COMMUNITY-UMFRAGE",
+      "eyebrow",
+    ),
+  );
+  if (data.mode === "waiting") {
+    root.append(
+      el("h1", "Der nächste Schritt entsteht gemeinsam."),
+      el("p", data.message, "description"),
+    );
+    return;
+  }
+  const p = data.poll;
+  root.append(el("h1", p.title), el("p", p.description, "description"));
+  const meta = el("div", undefined, "meta");
+  meta.append(
+    el(
+      "span",
+      p.status === "active"
+        ? "● Abstimmung geöffnet"
+        : "Abstimmung abgeschlossen",
+    ),
+    el("span", "Ende: " + new Date(p.endsAt).toLocaleString("de-DE")),
+    el("span", "Regelversion " + p.rules.version),
+  );
+  root.append(meta);
+  if (data.results) root.append(showResults(data.results));
+  if (data.voted) {
+    root.append(
+      el("section", "Danke. Deine Stimme wurde gespeichert.", "panel"),
+    );
+    if (!data.results)
+      root.append(
+        el(
+          "p",
+          "Ergebnisse werden gemäß den festgelegten Sichtbarkeitsregeln angezeigt.",
+          "hint",
+        ),
+      );
+    return;
+  }
+  if (data.mode !== "poll") {
+    if (!data.results)
+      root.append(
+        el("p", "Die Ergebnisse sind derzeit nicht freigegeben.", "panel"),
+      );
+    return;
+  }
+  const form = el("form", undefined, "panel"),
+    fs = el("fieldset");
+  fs.append(
+    el(
+      "legend",
+      p.rules.type === "ranking"
+        ? "Bringe alle Optionen in deine Reihenfolge."
+        : p.rules.type === "text"
+          ? "Welche Idee möchtest du einbringen?"
+          : "Wähle deine Antwort.",
+    ),
+  );
+  let order = p.rules.options.map((_, i) => i);
+  if (p.rules.type === "text") {
+    const input = el("textarea");
+    input.name = "answer";
+    input.required = true;
+    input.minLength = 3;
+    input.maxLength = 2000;
+    input.setAttribute("aria-label", "Deine Idee");
+    fs.append(
+      input,
+      el(
+        "p",
+        "Bitte keine persönlichen oder vertraulichen Informationen eintragen.",
+        "hint",
+      ),
+    );
+    const label = el("label", undefined, "option"),
+      check = el("input");
+    check.type = "checkbox";
+    check.name = "terms";
+    check.required = true;
+    label.append(
+      check,
+      el(
+        "span",
+        "Ich stimme den verlinkten Bedingungen für Beiträge und der dort beschriebenen Nutzungserlaubnis zu.",
+      ),
+    );
+    fs.append(label);
+  } else if (p.rules.type === "ranking") {
+    const list = el("ol", undefined, "ranking");
+    function draw() {
+      list.replaceChildren();
+      order.forEach((id, index) => {
+        const li = el("li", undefined, "rank-row");
+        li.append(el("span", `${index + 1}. ${p.rules.options[id]}`));
+        for (const [direction, label] of [
+          [-1, "Nach oben"],
+          [1, "Nach unten"],
+        ]) {
+          const b = el("button", direction === -1 ? "↑" : "↓", "secondary");
+          b.type = "button";
+          b.setAttribute("aria-label", p.rules.options[id] + ": " + label);
+          b.disabled =
+            index + direction < 0 || index + direction >= order.length;
+          b.onclick = () => {
+            [order[index], order[index + direction]] = [
+              order[index + direction],
+              order[index],
+            ];
+            draw();
+            list.children[index + direction]
+              .querySelector(direction === -1 ? "button" : "button:last-child")
+              .focus();
+          };
+          li.append(b);
+        }
+        list.append(li);
+      });
+    }
+    draw();
+    fs.append(list);
+  } else {
+    p.rules.options.forEach((option, id) => {
+      const label = el("label", undefined, "option"),
+        input = el("input");
+      input.type = p.rules.type === "single" ? "radio" : "checkbox";
+      input.name = "choice";
+      input.value = id;
+      if (input.type === "radio") input.required = true;
+      label.append(input, el("span", option));
+      fs.append(label);
+    });
+    if (p.rules.type === "multiple")
+      fs.append(
+        el(
+          "p",
+          `${p.rules.minChoices} bis ${p.rules.maxChoices} Antworten auswählen.`,
+          "hint",
+        ),
+      );
+  }
+  fs.append(
+    el(
+      "p",
+      "Anonyme Teilnahme: Eine Stimme je Browser. Das Löschen von Cookies oder weitere Geräte können technisch nicht zuverlässig ausgeschlossen werden.",
+      "hint",
+    ),
+  );
+  form.append(fs);
+  const submit = el("button", "Stimme abgeben →", "primary");
+  submit.type = "submit";
+  form.append(submit);
+  form.onsubmit = async (e) => {
+    e.preventDefault();
+    message.textContent = "";
+    submit.disabled = true;
+    try {
+      const fd = new FormData(form);
+      const answer =
+        p.rules.type === "text"
+          ? fd.get("answer")
+          : p.rules.type === "ranking"
+            ? order
+            : fd.getAll("choice").map(Number);
+      render(
+        await api("/api/poll/" + p.id + "/vote", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            answer,
+            termsAccepted: fd.get("terms") === "on",
+          }),
+        }),
+      );
+    } catch (err) {
+      message.textContent = err.message;
+      submit.disabled = false;
+    }
+  };
+  root.append(form);
+}
+document.querySelectorAll("[data-legal]").forEach(
+  (button) =>
+    (button.onclick = async () => {
+      try {
+        const data = await api("/api/legal");
+        const key = button.dataset.legal;
+        document.querySelector("#legal-title").textContent = button.textContent;
+        document.querySelector("#legal-text").textContent =
+          key === "imprint"
+            ? [data.operator, data.address, data.email]
+                .filter(Boolean)
+                .join("\n") ||
+              "Betreiberangaben werden vor dem Livegang ergänzt."
+            : data[key] ||
+              "Dieser Text wird vor dem Livegang rechtlich geprüft und konfiguriert.";
+        document.querySelector("#legal").showModal();
+      } catch (e) {
+        message.textContent = e.message;
+      }
+    }),
+);
+document.querySelectorAll("[data-legal]").forEach((button) =>
+  button.addEventListener("click", () => {
+    document.querySelector("#privacy-actions").hidden =
+      button.dataset.legal !== "privacy";
+  }),
+);
+document.querySelector("#delete-data").onclick = async () => {
+  if (
+    !confirm(
+      "Deine zuordenbaren Stimmen und Rohbeiträge löschen? Bereits freigegebene aggregierte Ergebnisse bleiben erhalten.",
+    )
+  )
+    return;
+  try {
+    const data = await api("/api/privacy/data", {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ confirmed: true }),
+    });
+    document.querySelector("#legal-text").textContent = data.message;
+    document.querySelector("#privacy-actions").hidden = true;
+  } catch (e) {
+    document.querySelector("#legal-text").textContent = e.message;
+  }
+};
+document.querySelector("#close-legal").onclick = () =>
+  document.querySelector("#legal").close();
+api("/api/poll")
+  .then(render)
+  .catch((e) => {
+    root.replaceChildren(
+      el("h1", "Kurz nicht erreichbar."),
+      el("p", "Bitte versuche es später erneut."),
+    );
+    message.textContent = e.message;
+  });
