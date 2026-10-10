@@ -16,6 +16,8 @@ Eine modulare Webplattform für Community-Umfragen und nachvollziehbare Entschei
 
 Node.js 24 LTS: `npm ci`. Optionale lokale Datenbank: `docker compose up -d --wait`. Konfiguration gemäß [.env.example](.env.example). Vollständige Installation einschließlich sicherem Admin-Setup: [Betriebshandbuch](docs/OPERATIONS.md).
 
+Der freigegebene ausklappbare Unterstützungsbereich verwendet Stripe Embedded Checkout. Einrichtung, Testzahlung und Live-Check: [Stripe-Anleitung](docs/STRIPE.md).
+
 ## Technische Grundlage
 
 TypeScript, Node.js, Fastify und MySQL in einem modularen Monolithen. Keine Microservice-, Redis- oder Docker-Abhängigkeit im Produktionsbetrieb. Das erste Infrastrukturziel ist netcup Webhosting 8000; der konkrete Account muss noch verifiziert werden. [Architektur](docs/ARCHITECTURE.md), [Hostingnachweise](docs/HOSTING.md), [Abnahmestand](docs/ACCEPTANCE.md).

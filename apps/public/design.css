@@ -230,10 +230,19 @@
   text-decoration: none;
   font-size: inherit;
 }
-.survey-stage footer a:hover,
-.survey-stage footer button:hover {
-  color: #edf1f7;
-  text-decoration: underline;
+.survey-stage a,
+.survey-stage footer button:not(.donate-icon),
+.more-links summary {
+  transition: color 180ms ease, text-shadow 180ms ease;
+}
+.survey-stage a:hover,
+.survey-stage a:focus-visible,
+.survey-stage footer button:not(.donate-icon):hover,
+.survey-stage footer button:not(.donate-icon):focus-visible,
+.more-links summary:hover,
+.more-links summary:focus-visible {
+  color: #d5b4ff;
+  text-shadow: 0 0 8px #b36dff80, 0 0 20px #a855f74d;
 }
 .survey-stage [hidden] {
   display: none !important;
@@ -356,6 +365,19 @@
   background: transparent;
   margin-left: 16px;
   flex-shrink: 0;
+  transition: color 180ms ease, border-color 180ms ease, box-shadow 180ms ease;
+}
+.survey-stage footer .donate-icon:is(:hover, :focus-visible) {
+  color: #ff667d;
+  border-color: #ff667d99;
+  box-shadow: 0 0 16px #ff385c40;
+}
+.donate-icon svg {
+  transition: filter 180ms ease, fill 180ms ease;
+}
+.donate-icon:is(:hover, :focus-visible) svg {
+  fill: #ff385c26;
+  filter: drop-shadow(0 0 5px #ff385cb3);
 }
 .project-stats {
   display: flex;
