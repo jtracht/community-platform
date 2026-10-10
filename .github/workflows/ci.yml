@@ -48,5 +48,6 @@ jobs:
             packages/database/migrations/
             package.json
             package-lock.json
+            scripts/build-assets.mjs
             docs/
           retention-days: 14

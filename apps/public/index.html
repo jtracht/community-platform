@@ -9,14 +9,26 @@
       content="Eine modulare Communityplattform: Gemeinsam Ideen sammeln, abstimmen und die nächsten Funktionen bestimmen. Eine offizielle Umfrage, transparente Regeln und bewusste Entscheidungen."
     />
     <link rel="stylesheet" href="/assets/style.css" />
+    <link rel="stylesheet" href="/assets/design.css" />
+    <script src="/assets/vendor/motion.js" defer></script>
     <script src="/assets/app.js" defer></script>
+    <script src="/assets/design.js" defer></script>
   </head>
-  <body>
-    <header class="site-head">
-      <a href="/" aria-label="Startseite"
-        ><span class="mark" aria-hidden="true">↗</span> Gemeinsam entscheiden</a
-      ><span class="quiet">Eine Frage. Deine Stimme.</span>
-    </header>
+  <body class="survey-stage">
+    <div class="atmosphere" aria-hidden="true">
+      <div class="halo halo-one"></div>
+      <div class="halo halo-two"></div>
+      <div class="orbit orbit-one"></div>
+      <div class="hologram"><i></i><i></i><i></i><b></b></div>
+      <div class="light-trail"></div>
+      <div class="float-tile tile-one">
+        <span></span><span></span><span></span>
+      </div>
+      <div class="float-tile tile-two"><span></span><span></span></div>
+      <div class="orbit orbit-two"></div>
+      <span class="star star-one"></span><span class="star star-two"></span
+      ><span class="star star-three"></span>
+    </div>
     <main id="main">
       <div id="poll" aria-live="polite">
         <p class="eyebrow">COMMUNITY-UMFRAGE</p>
@@ -26,7 +38,6 @@
       <p id="message" role="status"></p>
     </main>
     <footer>
-      <span>Die nächsten Schritte bestimmt die Community.</span>
       <nav aria-label="Basisinformationen">
         <a href="/impressum" data-legal="imprint">Impressum</a
         ><a href="/datenschutz" data-legal="privacy">Datenschutz</a
@@ -36,6 +47,9 @@
           >GitHub ↗</a
         >
       </nav>
+      <button id="motion-toggle" type="button" aria-pressed="false">
+        Bewegung pausieren
+      </button>
     </footer>
     <dialog id="legal">
       <h2 id="legal-title"></h2>

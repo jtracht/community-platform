@@ -80,7 +80,13 @@ export async function buildApp() {
       },
     },
   });
-  await app.register(rateLimit, { max: 120, timeWindow: "1 minute" });
+  await app.register(rateLimit, {
+    max: 120,
+    timeWindow: "1 minute",
+    allowList: (req) =>
+      (req.method === "GET" || req.method === "HEAD") &&
+      req.url.startsWith("/assets/"),
+  });
   await app.register(staticPlugin, {
     root: resolve("apps/public"),
     prefix: "/assets/",
