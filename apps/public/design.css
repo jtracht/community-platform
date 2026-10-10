@@ -394,3 +394,68 @@
     right: 0;
   }
 }
+/* An unfinished planet: one body, a narrow dawn edge and incomplete contours. */
+.orb-main {
+  width: min(74vw, 960px);
+  height: min(74vw, 960px);
+  left: -20%;
+  top: calc(50% - min(37vw, 480px));
+}
+.orb-skin {
+  background: radial-gradient(
+    circle at var(--light-x) var(--light-y),
+    #324557bb 0,
+    #1c2a3aba 24%,
+    #0e1722d9 50%,
+    #06090ef5 76%
+  );
+  border-color: #a1b6d81b;
+  box-shadow:
+    inset -70px -45px 110px #000e,
+    inset 14px 8px 50px #d0e4ff08,
+    0 20px 100px #0009;
+}
+.planet-rim {
+  position: absolute;
+  inset: -1px;
+  border-radius: 50%;
+  background: conic-gradient(
+    from 212deg,
+    transparent 0deg,
+    #afcbe83b 48deg,
+    #c8ddf878 78deg,
+    #7995b329 112deg,
+    transparent 150deg
+  );
+  mask-image: radial-gradient(circle, transparent 69.9%, #000 70.05%);
+  opacity: 0.75;
+}
+.orb-lines {
+  opacity: 0.45;
+  mask-image: linear-gradient(140deg, #000 0%, #000 22%, transparent 53%);
+}
+.orb-lines i {
+  border-style: dashed;
+  border-color: #b7cbe832;
+}
+.forming-arc {
+  position: absolute;
+  inset: -24px;
+  border-radius: 50%;
+  border: 1px solid transparent;
+  border-top-color: #a6bfdc30;
+  transform: rotate(-28deg) rotateY(22deg);
+}
+.arc-two {
+  inset: -47px;
+  border-top-color: #a6bfdc16;
+  transform: rotate(36deg) rotateX(26deg);
+}
+@media (max-width: 640px) {
+  .orb-main {
+    width: 650px;
+    height: 650px;
+    left: -410px;
+    top: 6%;
+  }
+}

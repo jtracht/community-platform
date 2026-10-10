@@ -11,6 +11,28 @@ function escape(value: string) {
   );
 }
 export async function legalRoutes(app: FastifyInstance) {
+  app.get("/api/support", async () => {
+    let url: string | null = null;
+    try {
+      const parsed = new URL(process.env.STRIPE_PAYMENT_LINK ?? "");
+      if (
+        parsed.protocol === "https:" &&
+        ["buy.stripe.com", "donate.stripe.com"].includes(parsed.hostname) &&
+        !parsed.username &&
+        !parsed.password &&
+        !parsed.port &&
+        parsed.pathname !== "/" &&
+        !(
+          process.env.NODE_ENV === "production" &&
+          parsed.pathname.startsWith("/test_")
+        )
+      )
+        url = parsed.href;
+    } catch {
+      /* Missing or invalid links stay unavailable. */
+    }
+    return { url };
+  });
   app.get("/ueber-das-projekt", async (_, reply) =>
     reply
       .type("text/html")

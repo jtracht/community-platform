@@ -565,7 +565,21 @@ document.querySelector("#rules-open").onclick = () =>
 document.querySelector("#rules-close").onclick = () =>
   document.querySelector("#rules-dialog").close();
 
-document.querySelector("#donate-open").onclick = () =>
-  document.querySelector("#donate-dialog").showModal();
+document.querySelector("#donate-open").onclick = async () => {
+  const button = document.querySelector("#donate-open");
+  button.disabled = true;
+  try {
+    const support = await api("/api/support");
+    if (support.url) {
+      location.assign(support.url);
+      return;
+    }
+    document.querySelector("#donate-dialog").showModal();
+  } catch {
+    document.querySelector("#donate-dialog").showModal();
+  } finally {
+    button.disabled = false;
+  }
+};
 document.querySelector("#donate-close").onclick = () =>
   document.querySelector("#donate-dialog").close();
