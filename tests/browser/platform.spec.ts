@@ -1,6 +1,10 @@
+import { assertTestDatabase } from "../../packages/database/testing.js";
 import { test, expect } from "@playwright/test";
 import { AxeBuilder } from "@axe-core/playwright";
 import { randomUUID } from "node:crypto";
+import * as OTPAuth from "otpauth";
+import { hashPassword, encrypt, decrypt } from "../../apps/server/src/auth.js";
+import { emailHash } from "../../apps/server/src/participation.js";
 import { createPoll, changePoll } from "../../apps/server/src/service.js";
 import {
   pool,
@@ -8,7 +12,11 @@ import {
   transaction,
   lockState,
 } from "../../packages/database/index.js";
-test.beforeAll(() => {
+test.beforeAll(async () => {
+  assertTestDatabase();
+  await pool.execute("DELETE FROM rate_windows");
+  process.env.SMTP_HOST = "test.invalid";
+  process.env.SMTP_FROM = "test@example.invalid";
   if (process.env.TEST_MYSQL !== "true")
     throw new Error(
       "Browser tests require explicit TEST_MYSQL=true and isolated test DB.",
@@ -113,10 +121,151 @@ test("Waiting state, legal information and protected admin login are accessible"
       name: "Der nächste Schritt entsteht gemeinsam.",
     }),
   ).toBeVisible();
-  await page.getByRole("button", { name: "Impressum" }).click();
+  await page.getByRole("link", { name: "Impressum" }).click();
   await expect(page.getByRole("dialog")).toBeVisible();
   await page.getByRole("button", { name: "Schließen" }).click();
   await page.goto("/admin");
   await expect(page.getByRole("textbox", { name: "E-Mail" })).toBeVisible();
   expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
 });
+
+test("Product Owner can prepare, edit and schedule a survey and pause participation", async ({
+  page,
+}) => {
+  const id = randomUUID();
+  const email = id + "@example.invalid";
+  const password = "browser-test-admin-password";
+  const secret = new OTPAuth.Secret({ size: 20 });
+  await pool.execute(
+    "INSERT INTO admins(id,email,password_hash,totp_secret,role) VALUES(?,?,?,?,?)",
+    [id, email, hashPassword(password), encrypt(secret.base32), "owner"],
+  );
+  await page.goto("/admin");
+  await page.getByRole("textbox", { name: "E-Mail" }).fill(email);
+  await page.getByLabel("Passwort", { exact: true }).fill(password);
+  await page
+    .getByRole("textbox", { name: "Zwei-Faktor-Code" })
+    .fill(new OTPAuth.TOTP({ secret }).generate());
+  await page.getByRole("button", { name: "Anmelden", exact: true }).click();
+  await expect(
+    page.getByRole("button", { name: "Umfragen", exact: true }),
+  ).toBeVisible();
+  await page.getByRole("button", { name: "Umfragen", exact: true }).click();
+  await page.getByRole("button", { name: "Neue Umfrage vorbereiten" }).click();
+  const title = "Eine vom Product Owner vorbereitete Umfrage " + id.slice(0, 8);
+  await page.getByLabel("Frage", { exact: true }).fill(title);
+  await page
+    .getByLabel("Antwortoptionen (eine je Zeile)", { exact: true })
+    .fill("Option Eins\nOption Zwei");
+  await page.getByRole("button", { name: "Entwurf speichern" }).click();
+  const article = page
+    .locator("article")
+    .filter({ has: page.getByRole("heading", { name: title, exact: true }) });
+  await expect(article).toBeVisible();
+  await article
+    .getByRole("button", { name: "Bearbeiten", exact: true })
+    .click();
+  await page
+    .getByLabel("Einordnung", { exact: true })
+    .fill("Vom Product Owner geprüft.");
+  await page.getByRole("button", { name: "Entwurf speichern" }).click();
+  page.once("dialog", (dialog) => dialog.accept());
+  await article.getByRole("button", { name: "Zeitplan freigeben" }).click();
+  await expect(article).toContainText("scheduled");
+  await expect(
+    article.getByRole("button", { name: "Bearbeiten", exact: true }),
+  ).toHaveCount(0);
+  await page.getByRole("button", { name: "Betrieb", exact: true }).click();
+  await page
+    .getByRole("checkbox", {
+      name: "Teilnahme und neue Umfragestarts pausieren",
+    })
+    .check();
+  await page.getByRole("button", { name: "Speichern", exact: true }).click();
+  await expect(
+    page.getByRole("checkbox", {
+      name: "Teilnahme und neue Umfragestarts pausieren",
+    }),
+  ).toBeChecked();
+  expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
+  await page
+    .getByRole("checkbox", {
+      name: "Teilnahme und neue Umfragestarts pausieren",
+    })
+    .uncheck();
+  await page.getByRole("button", { name: "Speichern", exact: true }).click();
+  await page.getByRole("button", { name: "Abmelden", exact: true }).click();
+  await expect(
+    page.getByRole("button", { name: "Anmelden", exact: true }),
+  ).toBeVisible();
+});
+
+for (const mode of ["email", "account"] as const)
+  test(`Verified ${mode} participation stays inside the survey`, async ({
+    page,
+  }) => {
+    const actor = randomUUID(),
+      email = randomUUID() + "@example.invalid";
+    const id = await createPoll(
+      {
+        title: "Verifizierte Teilnahme " + mode,
+        description: "Eine Stimme je verifizierter Identität.",
+        startsAt: new Date(Date.now() - 1000).toISOString(),
+        endsAt: new Date(Date.now() + 600000).toISOString(),
+        rules: {
+          type: "single",
+          options: ["Ja", "Nein"],
+          participation: mode,
+          visibility: "after_vote",
+        },
+      },
+      actor,
+    );
+    await changePoll(id, "schedule", actor);
+    await page.goto("/");
+    await page
+      .getByRole("textbox", { name: "E-Mail-Adresse zur Teilnahme" })
+      .fill(email);
+    await page
+      .getByRole("button", { name: "Bestätigungslink anfordern" })
+      .click();
+    await expect(
+      page.getByText("Die Verifizierungsnachricht wird versendet.", {
+        exact: false,
+      }),
+    ).toBeVisible();
+    const job = (
+      await rows<{ payload_encrypted: string }>(
+        "SELECT m.payload_encrypted FROM mail_jobs m JOIN verification_tokens t ON t.token_hash=m.verification_hash WHERE t.email_hash=? ORDER BY m.created_at DESC",
+        [emailHash(email)],
+      )
+    )[0]!;
+    const token = (
+      JSON.parse(decrypt(job.payload_encrypted)) as { text: string }
+    ).text.match(/#verify=([a-f0-9]{64})/)![1]!;
+    await page.goto("/#verify=" + token);
+    await expect(
+      page.getByRole("radio", { name: "Ja", exact: true }),
+    ).toBeVisible();
+    expect(page.url()).not.toContain("verify=");
+    await page.getByRole("radio", { name: "Ja", exact: true }).check();
+    await page.getByRole("button", { name: "Stimme abgeben" }).click();
+    await expect(
+      page.getByText("Danke. Deine Stimme wurde gespeichert."),
+    ).toBeVisible();
+    expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
+    await page.getByRole("link", { name: "Datenschutz", exact: true }).click();
+    page.once("dialog", (dialog) => dialog.accept());
+    await page.getByRole("button", { name: "Meine Rohdaten löschen" }).click();
+    await expect(
+      page.getByText("Rohdaten gelöscht.", { exact: false }),
+    ).toBeVisible();
+    if (mode === "account")
+      expect(
+        (
+          await rows("SELECT id FROM participants WHERE email_hash=?", [
+            emailHash(email),
+          ])
+        ).length,
+      ).toBe(0);
+  });

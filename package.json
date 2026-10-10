@@ -12,7 +12,7 @@
     "dev": "tsx watch apps/server/src/main.ts",
     "build": "tsc",
     "start": "node --env-file=.env dist/apps/server/src/main.js",
-    "test": "tsx --test tests/*.test.ts",
+    "test": "tsx --test --test-concurrency=1 tests/*.test.ts",
     "test:browser": "playwright test",
     "check": "tsc --noEmit",
     "migrate": "tsx scripts/migrate.ts",
@@ -25,6 +25,7 @@
     "@fastify/static": "^10.1.6",
     "fastify": "^5.0.0",
     "mysql2": "^3.0.0",
+    "nodemailer": "^10.1.0",
     "otpauth": "^9.0.0",
     "zod": "^4.0.0"
   },
@@ -32,6 +33,7 @@
     "@axe-core/playwright": "^4.13.0",
     "@playwright/test": "^1.64.0",
     "@types/node": "^24.0.0",
+    "@types/nodemailer": "^8.0.2",
     "tsx": "^4.0.0",
     "typescript": "^5.0.0"
   }

@@ -31,4 +31,15 @@ export class ModuleRegistry {
   list() {
     return [...this.manifests.values()].map(({ health, ...m }) => m);
   }
+  async health() {
+    return Promise.all(
+      [...this.manifests.values()].map(async (m) => {
+        try {
+          return { id: m.id, healthy: await m.health() };
+        } catch {
+          return { id: m.id, healthy: false };
+        }
+      }),
+    );
+  }
 }

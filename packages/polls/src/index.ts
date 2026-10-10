@@ -11,7 +11,7 @@ export const rulesSchema = z
       "after_close",
       "after_release",
     ]),
-    participation: z.literal("anonymous"),
+    participation: z.enum(["anonymous", "email", "account"]),
     quorum: z.number().int().min(0).default(0),
     tieRule: z.enum(["shared", "runoff"]).default("shared"),
     version: z.literal(1).default(1),

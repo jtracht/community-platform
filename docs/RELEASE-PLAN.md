@@ -1,13 +1,17 @@
-# MVP und vollständiges Startsystem
+# Lieferplan
 
-## Meilenstein 0.1: nutzbare Umfragebasis
-Vier Umfragetypen, transaktionale Hauptumfrage, anonyme Teilnahme, MFA-Adminverwaltung, Ideenprüfung, Ergebnisentscheidungen, manuelle GitHub-Issues, Datenschutzexport/-löschung und CI/Releaseentwürfe. Lokal geprüft. Für frühen Livegang fehlen konkrete Hostingverifikation und Betreiberrechtstexte. Dieser reduzierte Meilenstein erfüllt noch nicht die vollständige Abnahme des Masterprompts.
+## 0.1: Nutzbarer MVP — implementiert
 
-## Meilenstein 0.2: vollständige Startverwaltung
-E-Mail-/Kontoverifizierung, granulare Rechte und Kontorecovery, Moderations-Merge/Massenbearbeitung/Einsprüche, flexible Entscheidungsphasen, Bewertungen, Entwicklungsabhängigkeiten und Freigaben, integrierte Modulupdates/Health/Rollback, GitHub-PR-Verknüpfung und Konflikt-/Wiederholungsverwaltung, Aufbewahrung und Betreiber-Datenschutzprozesse. Kein zusätzlicher öffentlicher Produktbereich.
+Vier Fragetypen, eine transaktionale Hauptumfrage, anonyme Teilnahme, MFA-Verwaltung, Ideenprüfung, eingefrorene Ergebnisse und manuell bestätigte GitHub-Issues. Der MVP war die erste ausführbare Entwicklungsstufe.
 
-## Meilenstein 1.0: Produktionsabnahme
-Alle 16 Kriterien in ACCEPTANCE.md nachweisen; Last-, Sicherheits- und Browserprüfung, Hostinginstallation, Backup/Restore und kontrollierter Release. Automatisierung der Hostingbereitstellung erst mit verifizierten Pfaden/Neustartverfahren und geschützter Produktionsumgebung.
+## Erweiterung des Startsystems — implementiert, Integration wird abgenommen
+
+E-Mail-/Kontoverifizierung, granulare Rechte und Recovery, Moderation mit Merge/Massenbearbeitung/Einsprüchen, flexible Entscheidungsphasen und Bewertungen, Entwicklungsabhängigkeiten und Freigaben, integrierte Modulverwaltung, GitHub-PR-Verknüpfung/Synchronisierung/Konflikte, Datenschutzexport und Rohdatenaufbewahrung. Öffentlich kommt kein zusätzlicher Produktbereich hinzu.
+
+## 1.0: Produktionsabnahme — offen
+
+Nachweise gemäß ACCEPTANCE.md: konkretes netcup-Hosting, Betreiberrechtstexte, SMTP-Zustellung, echte externe Integration, Staging-Restore und Releasefreigabe. Hostingdeployment erst automatisieren, wenn Pfade und Neustartverfahren belegt sind. Ein früherer Livegang braucht dieselben Sicherheits-, Rechts- und Betriebsgates; eine kleinere Versionsnummer ersetzt sie nicht.
 
 ## Danach: Communitymodule
-Ein zusätzliches öffentliches Modul ist erst entwickelbar, wenn Communityentscheidung, Anforderungen und Product-Owner-Freigabe vorliegen. Die konzeptionelle Liste ist ausdrücklich kein vorab genehmigter Entwicklungsumfang.
+
+Zusätzliche öffentliche Funktionen entstehen nach dokumentierter Communityentscheidung, geklärten Anforderungen und Product-Owner-Freigabe. Die konzeptionelle Erweiterungsliste ist kein Implementierungsauftrag.

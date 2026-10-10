@@ -1,5 +1,6 @@
 import mysql, { type RowDataPacket, type PoolConnection } from "mysql2/promise";
 import { randomUUID, createHash } from "node:crypto";
+import { readFileSync } from "node:fs";
 import type { Poll } from "../polls/src/index.js";
 export const pool = mysql.createPool({
   uri: process.env.DATABASE_URL!,
@@ -8,6 +9,16 @@ export const pool = mysql.createPool({
   dateStrings: true,
   jsonStrings: true,
   multipleStatements: false,
+  ...(process.env.DATABASE_TLS === "true"
+    ? {
+        ssl: {
+          rejectUnauthorized: true,
+          ...(process.env.DATABASE_TLS_CA
+            ? { ca: readFileSync(process.env.DATABASE_TLS_CA, "utf8") }
+            : {}),
+        },
+      }
+    : {}),
 });
 export type SqlValue = string | number | boolean | Date | null;
 export async function rows<T = Record<string, unknown>>(

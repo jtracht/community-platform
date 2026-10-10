@@ -16,6 +16,8 @@ export default defineConfig({
       HOST: "127.0.0.1",
       SITE_URL: "http://127.0.0.1:3100",
       NODE_ENV: "development",
+      SMTP_HOST: "test.invalid",
+      SMTP_FROM: "test@example.invalid",
     },
   },
   reporter: "list",

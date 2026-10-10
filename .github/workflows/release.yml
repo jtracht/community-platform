@@ -12,7 +12,7 @@ jobs:
         image: mysql:8.4
         env:
           MYSQL_ROOT_PASSWORD: ci-root-only
-          MYSQL_DATABASE: community
+          MYSQL_DATABASE: community_test
           MYSQL_USER: community
           MYSQL_PASSWORD: ci-only
         ports: ["3306:3306"]
@@ -20,7 +20,7 @@ jobs:
           --health-cmd="mysqladmin ping -h localhost"
           --health-interval=10s --health-timeout=5s --health-retries=10
     env:
-      DATABASE_URL: mysql://community:ci-only@127.0.0.1:3306/community
+      DATABASE_URL: mysql://community:ci-only@127.0.0.1:3306/community_test
       SESSION_SECRET: ci-test-only-secret-at-least-32-characters
       TEST_MYSQL: "true"
     steps:
@@ -44,7 +44,7 @@ jobs:
       - name: Package reproducible candidate
         run: |
           SOURCE_DATE_EPOCH="$(git log -1 --format=%ct)"
-          tar --sort=name --mtime="@$SOURCE_DATE_EPOCH" --owner=0 --group=0 --numeric-owner -cf - dist apps/public apps/admin packages/database/migrations package.json package-lock.json docs LICENSE README.md | gzip -n > community-platform.tar.gz
+          tar --sort=name --mtime="@$SOURCE_DATE_EPOCH" --owner=0 --group=0 --numeric-owner -cf - dist apps/public apps/admin packages/database/migrations package.json package-lock.json .env.example docs LICENSE README.md CONTRIBUTING.md SECURITY.md | gzip -n > community-platform.tar.gz
           sha256sum community-platform.tar.gz > SHA256SUMS
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:

@@ -5,7 +5,7 @@ import rateLimit from "@fastify/rate-limit";
 import staticPlugin from "@fastify/static";
 import { resolve } from "node:path";
 import { readFile } from "node:fs/promises";
-import { randomBytes, randomUUID } from "node:crypto";
+import { randomBytes, randomUUID, createHmac } from "node:crypto";
 import { z, ZodError } from "zod";
 import {
   rows,
@@ -25,10 +25,21 @@ import {
   voterHash,
 } from "./service.js";
 import { digest, verifyPassword, decrypt, verifyTotp } from "./auth.js";
+import { identity, participationRoutes } from "./participation.js";
+import {
+  grants,
+  requiredPermission,
+  type Permission,
+} from "../../../packages/modules/src/permissions.js";
+import { workflowRoutes } from "./workflow.js";
+import { githubManagementRoutes } from "./github.js";
+import { sharedLimit } from "./limits.js";
+import { legalRoutes } from "./legal.js";
 type Admin = {
   id: string;
   email: string;
   role: "owner" | "moderator" | "viewer";
+  permissions: Permission[];
 };
 declare module "fastify" {
   interface FastifyRequest {
@@ -39,15 +50,20 @@ const uuid = z.uuid();
 export async function buildApp() {
   const app = Fastify({
     bodyLimit: 16384,
-    trustProxy: false,
-    logger: {
-      redact: [
-        "req.headers.cookie",
-        "req.headers.authorization",
-        "body.password",
-        "body.token",
-      ],
-    },
+    trustProxy: process.env.TRUSTED_PROXY
+      ? process.env.TRUSTED_PROXY.split(",").map((x) => x.trim())
+      : false,
+    logger:
+      process.env.TEST_MYSQL === "true"
+        ? false
+        : {
+            redact: [
+              "req.headers.cookie",
+              "req.headers.authorization",
+              "body.password",
+              "body.token",
+            ],
+          },
   });
   app.decorateRequest("admin", null);
   await app.register(cookie);
@@ -71,12 +87,33 @@ export async function buildApp() {
     index: false,
   });
   app.addHook("onRequest", async (req, reply) => {
+    const path = req.url.split("?")[0]!;
+    if (
+      req.method === "POST" &&
+      (path === "/api/admin/login" ||
+        path === "/api/participation/request" ||
+        /^\/api\/poll\/[^/]+\/vote$/.test(path))
+    ) {
+      const sensitive =
+        path === "/api/admin/login" || path === "/api/participation/request";
+      if (
+        !(await sharedLimit(
+          req.ip + ":" + path,
+          sensitive ? 15 : 100,
+          sensitive ? 900 : 60,
+        ))
+      ) {
+        reply.code(429);
+        throw new Error("Zu viele Anfragen. Bitte später erneut versuchen.");
+      }
+    }
     if (req.url.startsWith("/api/") || req.url.startsWith("/admin"))
       reply
         .header("Cache-Control", "no-store")
         .header("X-Robots-Tag", "noindex");
     if (
       !["GET", "HEAD", "OPTIONS"].includes(req.method) &&
+      req.url.split("?")[0] !== "/api/github/webhook" &&
       req.headers.origin !== process.env.SITE_URL
     ) {
       reply.code(403);
@@ -97,13 +134,26 @@ export async function buildApp() {
         throw new Error("Anmeldung erforderlich.");
       }
       req.admin = admin;
-      if (req.method !== "GET" && admin.role !== "owner") {
+      admin.permissions = grants(
+        admin.role,
+        (
+          await rows<{ permission: Permission }>(
+            "SELECT permission FROM admin_grants WHERE admin_id=?",
+            [admin.id],
+          )
+        ).map((g) => g.permission),
+      );
+      if (
+        !admin.permissions.includes(
+          requiredPermission(req.method, req.url.split("?")[0]!),
+        )
+      ) {
         reply.code(403);
         throw new Error("Product-Owner-Recht erforderlich.");
       }
     }
   });
-  app.setErrorHandler((error, req, reply) => {
+  app.setErrorHandler(async (error, req, reply) => {
     const e = error as Error & { code?: string; statusCode?: number };
     const status =
       e.code === "ER_DUP_ENTRY"
@@ -116,18 +166,31 @@ export async function buildApp() {
               ? 503
               : (e.statusCode ?? 400);
     if (status >= 500) req.log.error({ code: e.code }, "Serverfehler");
-    reply
-      .code(status)
-      .send({
-        error:
-          status >= 500
-            ? "Technischer Fehler. Bitte später erneut versuchen."
-            : e.code === "ER_DUP_ENTRY"
-              ? "Bereits gespeichert oder bereits abgestimmt."
-              : e instanceof ZodError
-                ? "Eingaben prüfen."
-                : e.message,
-      });
+    if ([401, 403, 429].includes(status)) {
+      try {
+        const source = createHmac("sha256", process.env.SESSION_SECRET!)
+          .update(
+            "security:" + req.ip + ":" + new Date().toISOString().slice(0, 10),
+          )
+          .digest("hex");
+        await rows(
+          "INSERT INTO security_events(id,status,path,source_hash) VALUES(?,?,?,?)",
+          [randomUUID(), status, req.url.split("?")[0]!.slice(0, 200), source],
+        );
+      } catch {
+        /* A logging failure must not weaken authorization. */
+      }
+    }
+    reply.code(status).send({
+      error:
+        status >= 500
+          ? "Technischer Fehler. Bitte später erneut versuchen."
+          : e.code === "ER_DUP_ENTRY"
+            ? "Bereits gespeichert oder bereits abgestimmt."
+            : e instanceof ZodError
+              ? "Eingaben prüfen."
+              : e.message,
+    });
   });
   app.get("/", async (_, reply) =>
     reply
@@ -162,11 +225,32 @@ export async function buildApp() {
     reviewed: process.env.LEGAL_REVIEWED === "true",
   }));
   app.get("/api/privacy/export", async (req, reply) => {
-    const voter = uuid.parse(req.cookies.voter);
     const entries = [];
-    for (const p of await rows<{ id: string; title: string }>(
-      "SELECT id,title FROM polls",
+    const session = req.cookies.participant_session
+      ? (
+          await rows<{ participant_id: string | null }>(
+            "SELECT participant_id FROM participant_sessions WHERE token_hash=? AND expires_at>UTC_TIMESTAMP(3)",
+            [digest(req.cookies.participant_session)],
+          )
+        )[0]
+      : undefined;
+    const storedAccount = session?.participant_id
+      ? (
+          await rows<{ email_encrypted: string; verified_at: string }>(
+            "SELECT email_encrypted,verified_at FROM participants WHERE id=?",
+            [session.participant_id],
+          )
+        )[0]
+      : undefined;
+    for (const p of await rows<{ id: string; title: string; rules: unknown }>(
+      "SELECT id,title,rules FROM polls",
     )) {
+      const voter = await identity(
+        req,
+        p.id,
+        json<{ participation: string }>(p.rules).participation,
+      );
+      if (!voter) continue;
       const v = (
         await rows<{ id: string; answer: unknown; created_at: string }>(
           "SELECT id,answer,created_at FROM votes WHERE poll_id=? AND voter_hash=?",
@@ -179,7 +263,15 @@ export async function buildApp() {
           submittedAt: v.created_at,
           answer: json(v.answer),
           ideas: await rows(
-            "SELECT original,content,status,category FROM ideas WHERE vote_id=?",
+            "SELECT id,original,content,status,category FROM ideas WHERE vote_id=?",
+            [v.id],
+          ),
+          history: await rows(
+            "SELECT h.previous_content,h.next_content,h.reason,h.created_at FROM idea_history h JOIN ideas i ON i.id=h.idea_id WHERE i.vote_id=? ORDER BY h.created_at",
+            [v.id],
+          ),
+          appeals: await rows(
+            "SELECT a.content,a.status,a.response,a.created_at FROM idea_appeals a JOIN ideas i ON i.id=a.idea_id WHERE i.vote_id=? ORDER BY a.created_at",
             [v.id],
           ),
         });
@@ -191,16 +283,34 @@ export async function buildApp() {
     return {
       exportedAt: new Date().toISOString(),
       scope:
-        "Beiträge dieser Browseridentität. Andere Browser können nicht zugeordnet werden.",
+        "Beiträge der vorhandenen Browseridentität und aktuellen Verifizierung. Anonyme Beiträge anderer Browser können nicht zugeordnet werden.",
+      account: storedAccount
+        ? {
+            email: decrypt(storedAccount.email_encrypted),
+            verifiedAt: storedAccount.verified_at,
+          }
+        : null,
       entries,
     };
   });
   app.delete("/api/privacy/data", async (req, reply) => {
-    const voter = uuid.parse(req.cookies.voter);
+    const identityMap = new Map<string, string>();
+    for (const p of await rows<{ id: string; rules: unknown }>(
+      "SELECT id,rules FROM polls",
+    )) {
+      const key = await identity(
+        req,
+        p.id,
+        json<{ participation: string }>(p.rules).participation,
+      );
+      if (key) identityMap.set(p.id, key);
+    }
     z.object({ confirmed: z.literal(true) }).parse(req.body);
     await transaction(async (c) => {
       await lockState(c);
       for (const p of await query<{ id: string }>(c, "SELECT id FROM polls")) {
+        const voter = identityMap.get(p.id);
+        if (!voter) continue;
         const v = (
           await query<{ id: string }>(
             c,
@@ -209,6 +319,11 @@ export async function buildApp() {
           )
         )[0];
         if (!v) continue;
+        await c.execute("DELETE FROM ballot_reviews WHERE vote_id=?", [v.id]);
+        await c.execute(
+          "DELETE a FROM idea_appeals a JOIN ideas i ON i.id=a.idea_id WHERE i.vote_id=?",
+          [v.id],
+        );
         await c.execute(
           "DELETE h FROM idea_history h JOIN ideas i ON i.id=h.idea_id WHERE i.vote_id=?",
           [v.id],
@@ -221,8 +336,52 @@ export async function buildApp() {
         await c.execute("DELETE FROM votes WHERE id=?", [v.id]);
       }
       await audit(c, null, "privacy.browser_data_deleted", randomUUID());
+      if (req.cookies.participant_session) {
+        const session = (
+          await query<{ participant_id: string | null; identity_key: string }>(
+            c,
+            "SELECT participant_id,identity_key FROM participant_sessions WHERE token_hash=? AND expires_at>UTC_TIMESTAMP(3)",
+            [digest(req.cookies.participant_session)],
+          )
+        )[0];
+        const email = session?.participant_id
+          ? (
+              await query<{ email_hash: string }>(
+                c,
+                "SELECT email_hash FROM participants WHERE id=?",
+                [session.participant_id],
+              )
+            )[0]?.email_hash
+          : session?.identity_key.startsWith("email:")
+            ? session.identity_key.slice(6)
+            : undefined;
+        if (email) {
+          await c.execute(
+            "DELETE m FROM mail_jobs m JOIN verification_tokens t ON t.token_hash=m.verification_hash WHERE t.email_hash=?",
+            [email],
+          );
+          await c.execute(
+            "DELETE FROM verification_tokens WHERE email_hash=?",
+            [email],
+          );
+        }
+        if (session?.participant_id) {
+          await c.execute(
+            "DELETE FROM participant_sessions WHERE participant_id=?",
+            [session.participant_id],
+          );
+          await c.execute("DELETE FROM participants WHERE id=?", [
+            session.participant_id,
+          ]);
+        } else
+          await c.execute(
+            "DELETE FROM participant_sessions WHERE token_hash=?",
+            [digest(req.cookies.participant_session)],
+          );
+      }
     });
     reply.clearCookie("voter", { path: "/" });
+    reply.clearCookie("participant_session", { path: "/" });
     return {
       ok: true,
       message:
@@ -241,7 +400,7 @@ export async function buildApp() {
         maxAge: 86400 * 30,
       });
     }
-    return current(voter);
+    return current(voter, (p) => identity(req, p.id, p.rules.participation));
   });
   app.post(
     "/api/poll/:id/vote",
@@ -263,9 +422,26 @@ export async function buildApp() {
         reply.code(400);
         throw new Error("Nutzungsbedingungen für Beiträge bestätigen.");
       }
-      const voter = uuid.parse(req.cookies.voter);
-      await vote(id, voter, body.answer);
-      return current(voter);
+      const mode = p
+        ? json<{ participation: string }>(p.rules).participation
+        : "anonymous";
+      const voter = await identity(req, id, mode);
+      if (!voter) {
+        reply.code(401);
+        throw new Error("Teilnahme zuerst verifizieren.");
+      }
+      await vote(
+        id,
+        voter,
+        body.answer,
+        mode,
+        req.cookies.participant_session
+          ? digest(req.cookies.participant_session)
+          : undefined,
+      );
+      return current(voter, (poll) =>
+        identity(req, poll.id, poll.rules.participation),
+      );
     },
   );
   app.post(
@@ -346,18 +522,30 @@ export async function buildApp() {
     polls: (
       await rows("SELECT * FROM polls ORDER BY created_at DESC LIMIT 100")
     ).map(toPoll),
-    ideas: await rows("SELECT * FROM ideas ORDER BY created_at DESC LIMIT 100"),
-    decisions: await rows(
-      "SELECT d.*,g.issue_url,g.state AS github_state FROM decisions d LEFT JOIN github_links g ON g.decision_id=d.id ORDER BY d.created_at DESC LIMIT 100",
-    ),
-    tasks: await rows(
-      "SELECT * FROM development_tasks ORDER BY priority DESC LIMIT 100",
-    ),
-    audit: await rows(
-      "SELECT sequence,action,target_id,created_at FROM audit_events ORDER BY sequence DESC LIMIT 50",
-    ),
-    state: (await rows("SELECT * FROM platform_state WHERE id=1"))[0],
-    modules: await rows("SELECT * FROM modules"),
+    ideas: req.admin!.permissions.includes("ideas.read")
+      ? await rows("SELECT * FROM ideas ORDER BY created_at DESC LIMIT 100")
+      : [],
+    decisions: req.admin!.permissions.includes("decisions.read")
+      ? await rows(
+          "SELECT d.*,g.issue_url,g.state AS github_state FROM decisions d LEFT JOIN github_links g ON g.decision_id=d.id ORDER BY d.created_at DESC LIMIT 100",
+        )
+      : [],
+    tasks: req.admin!.permissions.includes("planning.read")
+      ? await rows(
+          "SELECT * FROM development_tasks ORDER BY priority DESC LIMIT 100",
+        )
+      : [],
+    audit: req.admin!.permissions.includes("audit.read")
+      ? await rows(
+          "SELECT sequence,action,target_id,created_at FROM audit_events ORDER BY sequence DESC LIMIT 50",
+        )
+      : [],
+    state: req.admin!.permissions.includes("operations.manage")
+      ? (await rows("SELECT * FROM platform_state WHERE id=1"))[0]
+      : null,
+    modules: req.admin!.permissions.includes("modules.read")
+      ? await rows("SELECT * FROM modules")
+      : [],
   }));
   app.post("/api/admin/polls", async (req) => ({
     id: await createPoll(req.body, req.admin!.id),
@@ -484,6 +672,10 @@ export async function buildApp() {
     return { id };
   });
   await githubRoutes(app);
+  await participationRoutes(app);
+  await workflowRoutes(app);
+  await githubManagementRoutes(app);
+  await legalRoutes(app);
   return app;
 }
 async function githubRoutes(app: FastifyInstance) {

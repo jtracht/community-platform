@@ -28,9 +28,10 @@
     <footer>
       <span>Die nächsten Schritte bestimmt die Community.</span>
       <nav aria-label="Basisinformationen">
-        <button data-legal="imprint">Impressum</button
-        ><button data-legal="privacy">Datenschutz</button
-        ><button data-legal="contributions">Beiträge &amp; Rechte</button
+        <a href="/impressum" data-legal="imprint">Impressum</a
+        ><a href="/datenschutz" data-legal="privacy">Datenschutz</a
+        ><a href="/beitraege" data-legal="contributions"
+          >Beiträge &amp; Rechte</a
         ><a href="https://github.com/jtracht/community-platform" rel="noopener"
           >GitHub ↗</a
         >
@@ -41,14 +42,16 @@
       <p id="legal-text" class="preserve"></p>
       <div id="privacy-actions" hidden>
         <p class="hint">
-          Diese Verfahren betreffen die Beiträge dieses Browsers. Nach einem
-          Cookieverlust ist eine Zuordnung unter Umständen nicht mehr möglich.
+          Diese Verfahren betreffen deine zuordenbaren Beiträge und dein aktuell
+          verifiziertes Konto. Ohne Browseridentität oder Verifizierung ist eine
+          Zuordnung unter Umständen nicht mehr möglich.
         </p>
         <a href="/api/privacy/export" download>Meine Daten exportieren</a
         ><button id="delete-data" class="secondary">
           Meine Rohdaten löschen
         </button>
       </div>
+      <div id="privacy-details"></div>
       <button id="close-legal">Schließen</button>
     </dialog>
   </body>

@@ -1,4 +1,4 @@
-import { randomUUID, createHmac } from "node:crypto";
+import { randomUUID, createHmac, createHash } from "node:crypto";
 import {
   pool,
   rows,
@@ -46,7 +46,18 @@ export async function phases() {
     const stillActive = (
       await query(c, "SELECT id FROM polls WHERE status='active' LIMIT 1")
     )[0];
-    if (!stillActive && !state.paused) {
+    const module = (
+      await query<{ enabled: boolean; version: string }>(
+        c,
+        "SELECT enabled,version FROM modules WHERE id='polls'",
+      )
+    )[0];
+    if (
+      !stillActive &&
+      !state.paused &&
+      module?.enabled &&
+      module.version === "1.0.0"
+    ) {
       const next = (
         await query(
           c,
@@ -71,9 +82,19 @@ export async function phases() {
     );
   });
 }
-export async function current(voter?: string) {
+export async function current(
+  voter?: string,
+  resolveIdentity?: (poll: Poll) => Promise<string | undefined>,
+) {
   await phases();
   const state = (await rows("SELECT * FROM platform_state WHERE id=1"))[0]!;
+  const module = (
+    await rows<{ enabled: boolean; version: string }>(
+      "SELECT enabled,version FROM modules WHERE id='polls'",
+    )
+  )[0];
+  if (!module?.enabled || module.version !== "1.0.0")
+    return { mode: "waiting", message: state.waiting_message };
   if (state.paused) return { mode: "waiting", message: state.waiting_message };
   const record = state.current_poll_id
     ? (
@@ -84,6 +105,7 @@ export async function current(voter?: string) {
     : undefined;
   if (!record) return { mode: "waiting", message: state.waiting_message };
   const p = toPoll(record);
+  if (resolveIdentity) voter = await resolveIdentity(p);
   const voted = Boolean(
     voter &&
     (
@@ -100,6 +122,7 @@ export async function current(voter?: string) {
     mode: p.status === "active" ? "poll" : "results",
     poll: p,
     voted,
+    verified: p.rules.participation === "anonymous" || Boolean(voter),
     results: visible ? await aggregate(p) : null,
   };
 }
@@ -122,15 +145,44 @@ export async function aggregate(p: Poll) {
     a.map((x) => json<Answer>(x.answer)),
   );
 }
-export async function vote(id: string, voter: string, answer: unknown) {
+export async function vote(
+  id: string,
+  voter: string,
+  answer: unknown,
+  mode = "anonymous",
+  sessionHash?: string,
+) {
   return transaction(async (c) => {
     const state = await lockState(c);
+    const module = (
+      await query<{ enabled: boolean; version: string }>(
+        c,
+        "SELECT enabled,version FROM modules WHERE id='polls'",
+      )
+    )[0];
+    if (!module?.enabled || module.version !== "1.0.0")
+      throw new Error("Umfragemodul derzeit nicht verfügbar.");
     if (state.paused) throw new Error("Teilnahme derzeit pausiert.");
     const record = (
       await query(c, "SELECT * FROM polls WHERE id=? FOR UPDATE", [id])
     )[0];
     if (!record) throw new Error("Umfrage fehlt.");
     const p = toPoll(record);
+    if (p.rules.participation !== mode)
+      throw new Error(
+        "Teilnahmeverfahren stimmt nicht mit den Umfrageregeln überein.",
+      );
+    if (mode !== "anonymous") {
+      if (!sessionHash) throw new Error("Verifizierte Sitzung erforderlich.");
+      const session = (
+        await query(
+          c,
+          "SELECT s.token_hash FROM participant_sessions s LEFT JOIN participants u ON u.id=s.participant_id WHERE s.token_hash=? AND s.identity_key=? AND s.mode=? AND (s.poll_id IS NULL OR s.poll_id=?) AND s.expires_at>UTC_TIMESTAMP(3) AND (u.disabled IS NULL OR u.disabled=FALSE)",
+          [sessionHash, voter, mode, id],
+        )
+      )[0];
+      if (!session) throw new Error("Verifizierte Sitzung nicht mehr gültig.");
+    }
     const now = Date.now();
     if (
       p.status !== "active" ||
@@ -139,10 +191,31 @@ export async function vote(id: string, voter: string, answer: unknown) {
     )
       throw new Error("Umfrage ist nicht aktiv.");
     const valid = validateAnswer(p.rules, answer);
+    if (p.rules.type === "text") {
+      const terms =
+        process.env.LEGAL_CONTRIBUTION_TERMS ?? "development-unreviewed";
+      await c.execute(
+        "INSERT IGNORE INTO legal_versions(hash,content) VALUES(?,?)",
+        [createHash("sha256").update(terms).digest("hex"), terms],
+      );
+    }
     const voteId = randomUUID();
     await c.execute(
-      "INSERT INTO votes(id,poll_id,voter_hash,answer) VALUES(?,?,?,?)",
-      [voteId, id, voterHash(voter, id), JSON.stringify(valid)],
+      "INSERT INTO votes(id,poll_id,voter_hash,answer,contribution_terms_hash) VALUES(?,?,?,?,?)",
+      [
+        voteId,
+        id,
+        voterHash(voter, id),
+        JSON.stringify(valid),
+        p.rules.type === "text"
+          ? createHash("sha256")
+              .update(
+                process.env.LEGAL_CONTRIBUTION_TERMS ??
+                  "development-unreviewed",
+              )
+              .digest("hex")
+          : null,
+      ],
     );
     if (p.rules.type === "text") {
       const content = valid as string;
@@ -198,6 +271,13 @@ export async function changePoll(id: string, action: string, actor: string) {
     if (!record) throw new Error("Umfrage fehlt.");
     const p = toPoll(record);
     if (action === "schedule") {
+      if (
+        p.rules.participation !== "anonymous" &&
+        (!process.env.SMTP_HOST || !process.env.SMTP_FROM)
+      )
+        throw new Error(
+          "SMTP und Absender vor Freigabe einer verifizierten Umfrage konfigurieren.",
+        );
       if (p.status !== "draft" || Date.parse(p.endsAt) <= Date.now())
         throw new Error("Entwurf mit zukünftigem Ende erforderlich.");
       const overlap = await query(

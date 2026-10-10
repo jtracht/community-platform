@@ -12,7 +12,7 @@ async function api(url, options) {
   if (!r.ok) throw new Error(data.error || "Anfrage fehlgeschlagen.");
   return data;
 }
-function showResults(data) {
+function showResults(data, type) {
   const box = el("section", undefined, "panel");
   box.append(
     el("h2", "Ergebnis"),
@@ -22,6 +22,22 @@ function showResults(data) {
       "hint",
     ),
   );
+  if (type === "ranking")
+    box.append(
+      el(
+        "p",
+        "Borda-Auswertung: N−1 Punkte für Platz 1 bis 0 für den letzten Platz. Prozentwerte beziehen sich je Option auf die maximal möglichen Punkte.",
+        "hint",
+      ),
+    );
+  if (type === "multiple")
+    box.append(
+      el(
+        "p",
+        "Prozentwerte beziehen sich auf gültige Teilnehmende. Bei Mehrfachauswahl kann ihre Summe über 100 % liegen.",
+        "hint",
+      ),
+    );
   for (const item of [...data.items].sort((a, b) => b.score - a.score)) {
     const row = el("div", undefined, "result");
     const line = el("div", undefined, "result-line");
@@ -84,7 +100,67 @@ function render(data) {
     el("span", "Regelversion " + p.rules.version),
   );
   root.append(meta);
-  if (data.results) root.append(showResults(data.results));
+  const scheduleBox = el("section", undefined, "panel");
+  root.append(scheduleBox);
+  scheduleBox.hidden = true;
+  api("/api/poll/" + p.id + "/schedule")
+    .then((changes) => {
+      if (!changes.length || !scheduleBox.isConnected) return;
+      scheduleBox.hidden = false;
+      scheduleBox.append(el("h2", "Änderungen der Zeitplanung"));
+      for (const c of changes)
+        scheduleBox.append(
+          el(
+            "p",
+            new Date(c.changed_at.replace(" ", "T") + "Z").toLocaleString(
+              "de-DE",
+            ) +
+              ": " +
+              c.reason,
+          ),
+        );
+    })
+    .catch(() => {});
+  if (p.rules.participation !== "anonymous" && data.verified) {
+    const logout = el("button", "Teilnahme abmelden", "secondary");
+    logout.onclick = async () => {
+      await api("/api/participation/logout", { method: "POST" });
+      render(await api("/api/poll"));
+    };
+    root.append(logout);
+  }
+  const ruleBox = el("details", undefined, "panel");
+  ruleBox.append(el("summary", "Abstimmungsregeln"));
+  const visibility = {
+    hidden: "Ergebnisse werden nicht öffentlich angezeigt.",
+    after_vote: "Ergebnisse nach der eigenen Stimmabgabe.",
+    after_close: "Ergebnisse nach Ende der Umfrage.",
+    after_release: "Ergebnisse nach ausdrücklicher Auswertungsfreigabe.",
+  };
+  ruleBox.append(
+    el("p", visibility[p.rules.visibility]),
+    el(
+      "p",
+      "Mindestbeteiligung: " +
+        p.rules.quorum +
+        " gültige Stimmen. " +
+        (p.rules.tieRule === "runoff"
+          ? "Bei Gleichstand wird eine Stichwahl vorbereitet."
+          : "Bei Gleichstand gilt gleiche Priorität."),
+    ),
+  );
+  root.append(ruleBox);
+  if (data.results) {
+    if (!p.released)
+      root.append(
+        el(
+          "p",
+          "Vorläufiger Stand: Die Auswertung ist noch nicht abschließend freigegeben.",
+          "hint",
+        ),
+      );
+    root.append(showResults(data.results, p.rules.type));
+  }
   if (data.voted) {
     root.append(
       el("section", "Danke. Deine Stimme wurde gespeichert.", "panel"),
@@ -104,6 +180,51 @@ function render(data) {
       root.append(
         el("p", "Die Ergebnisse sind derzeit nicht freigegeben.", "panel"),
       );
+    return;
+  }
+  if (p.rules.participation !== "anonymous" && !data.verified) {
+    const form = el("form", undefined, "panel");
+    const label = el("label", undefined, "field");
+    label.append(el("span", "E-Mail-Adresse zur Teilnahme"));
+    const input = el("input");
+    input.type = "email";
+    input.required = true;
+    input.autocomplete = "email";
+    input.maxLength = 254;
+    label.append(input);
+    form.append(
+      el(
+        "h2",
+        p.rules.participation === "account"
+          ? "Mit verifiziertem Konto teilnehmen"
+          : "Teilnahme per E-Mail bestätigen",
+      ),
+      label,
+      el(
+        "p",
+        "Wir senden einen einmaligen Anmeldelink. Deine Adresse wird nicht veröffentlicht und nicht für Werbung verwendet.",
+        "hint",
+      ),
+    );
+    const submit = el("button", "Bestätigungslink anfordern", "primary");
+    submit.type = "submit";
+    form.append(submit);
+    form.onsubmit = async (e) => {
+      e.preventDefault();
+      submit.disabled = true;
+      try {
+        const data = await api("/api/participation/request", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ pollId: p.id, email: input.value }),
+        });
+        form.append(el("p", data.message, "hint"));
+      } catch (err) {
+        message.textContent = err.message;
+        submit.disabled = false;
+      }
+    };
+    root.append(form);
     return;
   }
   const form = el("form", undefined, "panel"),
@@ -169,9 +290,13 @@ function render(data) {
               order[index],
             ];
             draw();
-            list.children[index + direction]
-              .querySelector(direction === -1 ? "button" : "button:last-child")
-              .focus();
+            const moved = list.children[index + direction];
+            let target = moved.querySelector(
+              direction === -1 ? "button" : "button:last-child",
+            );
+            if (target.disabled)
+              target = moved.querySelector("button:not(:disabled)");
+            target?.focus();
           };
           li.append(b);
         }
@@ -242,7 +367,8 @@ function render(data) {
 }
 document.querySelectorAll("[data-legal]").forEach(
   (button) =>
-    (button.onclick = async () => {
+    (button.onclick = async (event) => {
+      event.preventDefault();
       try {
         const data = await api("/api/legal");
         const key = button.dataset.legal;
@@ -265,6 +391,8 @@ document.querySelectorAll("[data-legal]").forEach((button) =>
   button.addEventListener("click", () => {
     document.querySelector("#privacy-actions").hidden =
       button.dataset.legal !== "privacy";
+    document.querySelector("#privacy-details").hidden =
+      button.dataset.legal !== "privacy";
   }),
 );
 document.querySelector("#delete-data").onclick = async () => {
@@ -282,18 +410,87 @@ document.querySelector("#delete-data").onclick = async () => {
     });
     document.querySelector("#legal-text").textContent = data.message;
     document.querySelector("#privacy-actions").hidden = true;
+    document.querySelector("#privacy-details").replaceChildren();
+    render(await api("/api/poll"));
   } catch (e) {
     document.querySelector("#legal-text").textContent = e.message;
   }
 };
 document.querySelector("#close-legal").onclick = () =>
   document.querySelector("#legal").close();
-api("/api/poll")
-  .then(render)
-  .catch((e) => {
-    root.replaceChildren(
-      el("h1", "Kurz nicht erreichbar."),
-      el("p", "Bitte versuche es später erneut."),
-    );
-    message.textContent = e.message;
+document
+  .querySelector('[data-legal="privacy"]')
+  .addEventListener("click", async () => {
+    const box = document.querySelector("#privacy-details");
+    box.replaceChildren();
+    try {
+      const data = await api("/api/privacy/export");
+      for (const e of data.entries)
+        for (const idea of e.ideas) {
+          const form = el("form", undefined, "panel");
+          form.append(
+            el("h3", "Dein Beitrag: " + e.poll),
+            el("p", idea.content),
+            el("p", "Prüfstatus: " + idea.status, "hint"),
+          );
+          const label = el("label", undefined, "field");
+          label.append(el("span", "Begründung eines Einspruchs"));
+          const input = el("textarea");
+          input.required = true;
+          input.minLength = 10;
+          input.maxLength = 2000;
+          label.append(input);
+          form.append(label);
+          const b = el("button", "Einspruch einreichen", "secondary");
+          b.type = "submit";
+          form.append(b);
+          form.onsubmit = async (event) => {
+            event.preventDefault();
+            b.disabled = true;
+            try {
+              await api("/api/privacy/appeal", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ ideaId: idea.id, content: input.value }),
+              });
+              form.append(
+                el("p", "Der Einspruch wurde zur Prüfung gespeichert."),
+              );
+            } catch (err) {
+              form.append(el("p", err.message));
+              b.disabled = false;
+            }
+          };
+          box.append(form);
+        }
+    } catch {
+      /* no attributable identity */
+    }
   });
+async function loadPoll() {
+  const token = new URLSearchParams(location.hash.slice(1)).get("verify");
+  if (token) {
+    history.replaceState(null, "", location.pathname);
+    await api("/api/participation/verify", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ token }),
+    });
+  }
+  return api("/api/poll");
+}
+function refreshPoll() {
+  return loadPoll()
+    .then(render)
+    .catch((e) => {
+      root.replaceChildren(
+        el("h1", "Kurz nicht erreichbar."),
+        el("p", "Bitte versuche es später erneut."),
+      );
+      message.textContent = e.message;
+    });
+}
+refreshPoll();
+window.addEventListener("hashchange", () => {
+  if (location.hash.includes("verify=")) refreshPoll();
+});

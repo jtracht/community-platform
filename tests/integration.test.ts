@@ -1,3 +1,5 @@
+import { assertTestDatabase } from "../packages/database/testing.js";
+if (process.env.TEST_MYSQL === "true") assertTestDatabase();
 import { test, after } from "node:test";
 import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
