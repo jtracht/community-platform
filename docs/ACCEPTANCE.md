@@ -29,3 +29,5 @@ Stand: 10.10.2026. Ausführbares Startsystem; noch kein produktiv freigegebenes 
 2. Rechtlichen Betreiber, geprüfte Texte, Beitragsnutzung, Aufbewahrung und administrative Datenschutzverfahren konfigurieren/freigeben.
 3. Staging mit dem Produktionsverfahren installieren; Mailzustellung, echte GitHub-Anbindung, Backup/Restore und Rollback prüfen.
 4. Product Owner genehmigt Release und Livegang. CI erzeugt geprüfte Releaseentwürfe; aktuell wurde kein Release veröffentlicht.
+
+Lokaler Wiederherstellungsnachweis am 10.10.2026: acht Migrationen, 28 Umfragen, 216 Stimmen, sechs Ideen, sechs Entscheidungen und 177 Auditereignisse in ein getrenntes Ziel restauriert; Zählwerte und Fremdschlüssel geprüft. Auditkette separat gültig. Ausschließlich synthetische Testdaten; Produktiv-RPO/RTO weiter offen.
