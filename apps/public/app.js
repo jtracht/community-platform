@@ -439,9 +439,10 @@ document.querySelectorAll("[data-legal]").forEach(
         const data = await api("/api/legal");
         const key = button.dataset.legal;
         document.querySelector("#legal-title").textContent = button.textContent;
+        document.querySelector("#legal-draft").hidden = data.reviewed === true;
         document.querySelector("#legal-text").textContent =
           key === "imprint"
-            ? [data.operator, data.address, data.email]
+            ? data.imprint || [data.operator, data.address, data.email]
                 .filter(Boolean)
                 .join("\n") ||
               "Betreiberangaben werden vor dem Livegang ergänzt."

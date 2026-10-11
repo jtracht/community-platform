@@ -36,6 +36,7 @@ import { githubManagementRoutes } from "./github.js";
 import { sharedLimit } from "./limits.js";
 import { legalRoutes } from "./legal.js";
 import { supportRoutes } from "./support.js";
+import { loadLegalContent, type LegalContent } from "./legal-content.js";
 type Admin = {
   id: string;
   email: string;
@@ -48,7 +49,8 @@ declare module "fastify" {
   }
 }
 const uuid = z.uuid();
-export async function buildApp() {
+export async function buildApp(legal?: LegalContent) {
+  const legalContent = legal ?? await loadLegalContent();
   const app = Fastify({
     bodyLimit: 16384,
     trustProxy: process.env.TRUSTED_PROXY
@@ -238,14 +240,6 @@ export async function buildApp() {
       .type("text/plain")
       .send("User-agent: *\nDisallow: /admin\nDisallow: /api/\n"),
   );
-  app.get("/api/legal", async () => ({
-    operator: process.env.OPERATOR_NAME ?? "",
-    address: process.env.OPERATOR_ADDRESS ?? "",
-    email: process.env.OPERATOR_EMAIL ?? "",
-    privacy: process.env.LEGAL_PRIVACY_TEXT ?? "",
-    contributions: process.env.LEGAL_CONTRIBUTION_TERMS ?? "",
-    reviewed: process.env.LEGAL_REVIEWED === "true",
-  }));
   app.get("/api/privacy/export", async (req, reply) => {
     const entries = [];
     const session = req.cookies.participant_session
@@ -697,7 +691,7 @@ export async function buildApp() {
   await participationRoutes(app);
   await workflowRoutes(app);
   await githubManagementRoutes(app);
-  await legalRoutes(app);
+  await legalRoutes(app, legalContent);
   await supportRoutes(app);
   return app;
 }

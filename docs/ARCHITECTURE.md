@@ -1,10 +1,12 @@
 # Architektur und Implementierungsplan
 
-Stand: 10.10.2026. Keine Hostingverifikation des konkreten Vertrags vorhanden.
+Stand: 11.10.2026. Keine Hostingverifikation des konkreten Vertrags vorhanden.
 
 ## Beschlossener Umfang
 
 Öffentlich genau eine Umfrage oder Ergebnis-/Wartezustand und Pflichtinformationen. Vier Fragetypen. Verwaltung, Entscheidungen, Rollen, Betrieb und GitHub nur geschützt. Zusätzliche öffentliche Module benötigen eine dokumentierte Communityentscheidung und Product-Owner-Freigabe.
+
+Der Product Owner hat im Designprozess zusätzlich eine Projektinformationsseite mit aggregierten Statistiken sowie freiwillige Stripe-Unterstützung ausdrücklich angefordert. Diese Freigabe erweitert den öffentlichen Umfang um genau diese beiden Elemente; sie genehmigt keine weiteren Communitymodule.
 
 ## ADR 001: Modularer Monolith
 
@@ -30,6 +32,12 @@ polls -> votes; platform_state -> aktuelle offizielle Umfrage; admins -> session
 4. Erst danach Produktionsrelease. Optionale öffentliche Communitymodule sind kein Bestandteil dieser Schritte.
 
 Der MVP ist nicht automatisch das vollständige erste Release. docs/ACCEPTANCE.md hält fehlende Nachweise fest.
+
+## Öffentliche Darstellung
+
+Schwarz/Anthrazit, transparenter Weichzeichner und ein auf Zeigerbewegung reagierender Sternhintergrund. Motion wird aus der gesperrten npm-Abhängigkeit lokal bereitgestellt. Animationen berücksichtigen reduzierte Bewegung und Touchgeräte; ein Interpolationslauf glättet Zeigeränderungen ohne dauerhafte Hintergrundschleife. Nach einer erfolgreichen Stimmabgabe werden dieselbe Karte und derselbe Knopf weiterverwendet: Eingaben verschwinden, freigegebene Prozentbalken stehen in den bisherigen Antwortfeldern, der Knopf enthält die Stimmenzahl und darunter erscheint der Countdown. Zurückgehaltene Ergebnisse bleiben verborgen. Auswertungsdetails sind über die Abstimmungsregeln erreichbar.
+
+Stripe wird erst beim Anfordern des Zahlungsformulars geladen. Die Sitzung wird serverseitig erstellt und ihr Abschluss serverseitig geprüft; Test-/Livemodus und fehlende Konfiguration werden getrennt behandelt. Einrichtung und noch erforderliche externe Prüfung stehen in STRIPE.md.
 
 ## Erweiterter Datenzugriff
 

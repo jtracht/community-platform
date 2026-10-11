@@ -326,6 +326,23 @@
   -webkit-backdrop-filter: blur(8px);
   backdrop-filter: blur(8px);
 }
+.survey-stage .legal-draft {
+  color: #dddddd;
+  border-left: 2px solid #999999;
+  padding-left: 12px;
+  font-size: 14px;
+}
+.legal-page main > h1 {
+  margin-top: 28px;
+}
+.legal-page article h2 {
+  margin-top: 36px;
+  font-size: 21px;
+  font-weight: 550;
+}
+.legal-page article p {
+  color: #cccccc;
+}
 .survey-stage #close-legal,
 .survey-stage #rules-close {
   background: #363636;

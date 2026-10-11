@@ -2,7 +2,7 @@
 
 Eine modulare Webplattform für Community-Umfragen und nachvollziehbare Entscheidungen. Die Community bestimmt die nächsten Funktionen; der Product Owner verantwortet Sicherheit, Umsetzung und Releases.
 
-**Stand: ausführbares Startsystem, noch keine Produktionsfreigabe.** Der Startumfang zeigt öffentlich genau eine Hauptumfrage oder einen Ergebnis-/Wartezustand. Zusätzliche öffentliche Funktionen werden erst nach Communityentscheidung umgesetzt.
+**Stand: ausführbares Startsystem, noch keine Produktionsfreigabe.** Die Startseite zeigt genau eine Hauptumfrage oder einen Ergebnis-/Wartezustand. Der Product Owner hat zusätzlich Projektinformationen und freiwillige Stripe-Unterstützung freigegeben. Weitere öffentliche Communitymodule benötigen eine entsprechende Entscheidung.
 
 ## Was funktioniert?
 
@@ -11,12 +11,15 @@ Eine modulare Webplattform für Community-Umfragen und nachvollziehbare Entschei
 - Geschütztes Admin-Panel mit Passwort/TOTP, granularen Rechten, Ideenmoderation, Einsprüchen, Entscheidungen, Bewertungen und Entwicklungsfreigaben.
 - Manuell genehmigte GitHub-Issues, PR-Verknüpfung, signierte Webhooks, Konfliktprüfung und Auditprotokolle.
 - MySQL-Migrationen, Modulverwaltung, Datenschutzexport/-löschung, Rohdatenaufbewahrung und geprüfte Releaseentwürfe mit Prüfsummen.
+- Responsive Oberfläche in Schwarz und Anthrazit mit transparenten Karten, lokal bereitgestellten Motion-Animationen und Ergebnisbalken in den Auswahlfeldern. Der Countdown erscheint nach der eigenen Abstimmung; Ergebnisregeln bleiben wirksam.
 
 ## Schnellstart
 
 Node.js 24 LTS: `npm ci`. Optionale lokale Datenbank: `docker compose up -d --wait`. Konfiguration gemäß [.env.example](.env.example). Vollständige Installation einschließlich sicherem Admin-Setup: [Betriebshandbuch](docs/OPERATIONS.md).
 
 Der freigegebene ausklappbare Unterstützungsbereich verwendet Stripe Embedded Checkout. Einrichtung, Testzahlung und Live-Check: [Stripe-Anleitung](docs/STRIPE.md).
+
+Bearbeitbare Entwürfe für Impressum, Datenschutz und Beitragsbedingungen: [Rechtstexte und Einbindung](docs/legal/README.md). Betreiberangaben, Dienstleister und Fristen sind vor Veröffentlichung zu ergänzen und freizugeben; die Vorschau kennzeichnet die Fassungen als Entwurf.
 
 ## Technische Grundlage
 

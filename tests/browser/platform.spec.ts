@@ -165,7 +165,17 @@ test("Waiting state, legal information and protected admin login are accessible"
   ).toBeVisible();
   await page.getByRole("link", { name: "Impressum" }).click();
   await expect(page.getByRole("dialog")).toBeVisible();
+  await expect(page.locator("#legal-text")).toContainText("Browser-Testbetreiber");
+  await expect(page.locator("#legal-draft")).toBeVisible();
   await page.getByRole("button", { name: "Schließen" }).click();
+  await page.getByRole("link", { name: "Datenschutz", exact: true }).click();
+  await expect(page.locator("#legal-text")).toContainText("pseudonymisiert");
+  await page.getByRole("button", { name: "Schließen" }).click();
+  await page.goto("/datenschutz");
+  await expect(page.getByRole("heading", { name: "Datenschutz", exact: true })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "8. Freiwillige Projektunterstützung über Stripe", exact: true })).toBeVisible();
+  expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   await page.goto("/admin");
   await expect(page.getByRole("textbox", { name: "E-Mail" })).toBeVisible();
   expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
