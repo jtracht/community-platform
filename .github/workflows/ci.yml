@@ -3,11 +3,16 @@ on:
   push:
     branches: [main]
   pull_request:
+  workflow_dispatch:
+concurrency:
+  group: quality-${{ github.ref }}
+  cancel-in-progress: true
 permissions:
   contents: read
 jobs:
   test:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
     services:
       mysql:
         image: mysql:8.4
@@ -25,8 +30,10 @@ jobs:
       SESSION_SECRET: ci-test-only-secret-at-least-32-characters
       TEST_MYSQL: "true"
     steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
-      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: "24"
           cache: npm
@@ -38,9 +45,12 @@ jobs:
       - run: npm run test:browser
       - run: npm run build
       - run: npm audit --omit=dev --audit-level=high
-      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: application
+          # Only the paths below; .env.example is intentionally a hidden file.
+          include-hidden-files: true
+          if-no-files-found: error
           path: |
             dist/
             apps/public/
@@ -48,5 +58,54 @@ jobs:
             packages/database/migrations/
             package.json
             package-lock.json
+            scripts/build-assets.mjs
             docs/
+            .env.example
+            LICENSE
+            README.md
+            CONTRIBUTING.md
+            SECURITY.md
+            !**/.env
           retention-days: 14
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: application
+          path: ${{ runner.temp }}/application-verification
+      - name: Verify configuration and legal documents in artifact
+        env:
+          ARTIFACT_DIR: ${{ runner.temp }}/application-verification
+        run: |
+          test -f "$ARTIFACT_DIR/.env.example"
+          test ! -f "$ARTIFACT_DIR/.env"
+          test -f "$ARTIFACT_DIR/docs/legal/impressum.txt"
+          test -f "$ARTIFACT_DIR/docs/legal/datenschutz.txt"
+          test -f "$ARTIFACT_DIR/docs/legal/beitraege.txt"
+          test -f "$ARTIFACT_DIR/LICENSE"
+      - name: Install production dependencies in downloaded artifact
+        working-directory: ${{ runner.temp }}/application-verification
+        run: npm ci --omit=dev
+      - name: Smoke test compiled release without development dependencies
+        env:
+          ARTIFACT_DIR: ${{ runner.temp }}/application-verification
+        run: node scripts/verify-release.mjs "$ARTIFACT_DIR"
+      - name: Build production installation package
+        env:
+          ARTIFACT_DIR: ${{ runner.temp }}/application-verification
+          PACKAGE_DIR: ${{ runner.temp }}/production-package
+        run: |
+          export RELEASE_COMMIT="$(git rev-parse HEAD)"
+          export SOURCE_DATE_EPOCH="$(git log -1 --format=%ct)"
+          bash scripts/package-release.sh "$ARTIFACT_DIR" "$PACKAGE_DIR"
+          bash scripts/package-release.sh "$ARTIFACT_DIR" "$RUNNER_TEMP/reproducibility-check"
+          cmp "$PACKAGE_DIR/community-platform.tar.gz" "$RUNNER_TEMP/reproducibility-check/community-platform.tar.gz"
+          cd "$PACKAGE_DIR"
+          sha256sum --check SHA256SUMS
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: production-package
+          if-no-files-found: error
+          retention-days: 30
+          path: |
+            ${{ runner.temp }}/production-package/community-platform.tar.gz
+            ${{ runner.temp }}/production-package/SHA256SUMS
+            ${{ runner.temp }}/production-package/RELEASE.json

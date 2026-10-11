@@ -2,6 +2,8 @@
 
 Dies ist ein technisches Arbeitsdokument, kein rechtlich freigegebener Informationstext.
 
+Am 11.10.2026 hat der Product Owner die Erstellung eigener Rechtstexte beauftragt. [Impressum, Datenschutz und Beitragsbedingungen](legal/README.md) sind als bearbeitbare Entwürfe mit tatsächlichen Datenwegen, bedingten Angaben und offenen Betreiberfakten vorhanden. Die Vorschau bindet sie ein; ein Produktivstart mit diesen Entwürfen bleibt blockiert.
+
 Die Plattform speichert Stimmen mit umfragespezifischem HMAC aus zufälliger Browseridentität. Der HttpOnly-Cookie ist technisch zur Doppelstimmenbegrenzung vorgesehen; Speicherdauer 30 Tage. Es werden keine IPs an Abstimmungsantworten gespeichert, kein Tracking oder Drittanbieterfont geladen. Freitext wird vor öffentlicher Verwendung moderiert und erfordert Zustimmung zu den konfigurierten Beitragsbedingungen. Ergebnis-API veröffentlicht keine unbearbeiteten Freitexte.
 
 Vor Livegang: Betreiberanschrift, Kontakt, Rechtsgrundlagen, AV-Vertrag mit Hosting/gegebenenfalls E-Mail-Anbieter, Cookiebewertung, Löschfristen, Auskunfts-/Berichtigungsprozess, Beiträge-Nutzungserlaubnis und Lizenz juristisch prüfen. Unternehmen und verbindliche Rechtsgrundlagen werden nicht erfunden.

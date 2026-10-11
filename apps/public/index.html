@@ -2,43 +2,126 @@
 <html lang="de">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <title>Gemeinsam entscheiden · Community-Umfrage</title>
     <meta
       name="description"
       content="Eine modulare Communityplattform: Gemeinsam Ideen sammeln, abstimmen und die nächsten Funktionen bestimmen. Eine offizielle Umfrage, transparente Regeln und bewusste Entscheidungen."
     />
     <link rel="stylesheet" href="/assets/style.css" />
+    <link rel="stylesheet" href="/assets/design.css" />
+    <script src="/assets/vendor/motion.js" defer></script>
     <script src="/assets/app.js" defer></script>
+    <script src="/assets/design.js" defer></script>
+    <script src="/assets/support.js" defer></script>
   </head>
-  <body>
-    <header class="site-head">
-      <a href="/" aria-label="Startseite"
-        ><span class="mark" aria-hidden="true">↗</span> Gemeinsam entscheiden</a
-      ><span class="quiet">Eine Frage. Deine Stimme.</span>
-    </header>
+  <body class="survey-stage">
+    <div class="atmosphere" aria-hidden="true">
+      <div class="depth-scene">
+        <div class="star">
+          <div class="star-corona"></div>
+          <div class="star-surface"></div>
+          <div class="star-glare"></div>
+        </div>
+      </div>
+    </div>
     <main id="main">
       <div id="poll" aria-live="polite">
-        <p class="eyebrow">COMMUNITY-UMFRAGE</p>
         <h1>Wir entscheiden gemeinsam.</h1>
         <p>Umfrage wird geladen …</p>
       </div>
       <p id="message" role="status"></p>
     </main>
     <footer>
-      <span>Die nächsten Schritte bestimmt die Community.</span>
       <nav aria-label="Basisinformationen">
         <a href="/impressum" data-legal="imprint">Impressum</a
         ><a href="/datenschutz" data-legal="privacy">Datenschutz</a
-        ><a href="/beitraege" data-legal="contributions"
-          >Beiträge &amp; Rechte</a
-        ><a href="https://github.com/jtracht/community-platform" rel="noopener"
-          >GitHub ↗</a
-        >
+        ><a href="/ueber-das-projekt">Über das Projekt</a>
+        <details class="more-links">
+          <summary>Mehr</summary>
+          <div class="more-menu">
+            <button id="rules-open" type="button" hidden>
+              Abstimmungsregeln</button
+            ><a href="/beitraege" data-legal="contributions"
+              >Beiträge &amp; Rechte</a
+            ><a
+              href="https://github.com/jtracht/community-platform"
+              rel="noopener"
+              >GitHub</a
+            >
+          </div>
+        </details>
       </nav>
+      <button
+        id="donate-open"
+        aria-expanded="false"
+        aria-controls="donation-panel"
+        class="donate-icon"
+        type="button"
+        aria-label="Projekt unterstützen"
+        title="Projekt unterstützen"
+      >
+        <svg
+          viewBox="0 0 24 24"
+          width="19"
+          height="19"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="1.5"
+          aria-hidden="true"
+        >
+          <path
+            d="M20.5 5.5a5 5 0 0 0-7.1 0L12 7l-1.4-1.5a5 5 0 0 0-7.1 7.1L12 21l8.5-8.4a5 5 0 0 0 0-7.1Z"
+          />
+        </svg>
+      </button>
     </footer>
+    <section
+      id="donation-panel"
+      class="donation-panel"
+      aria-label="Projekt unterstützen"
+      hidden
+    >
+      <div class="support-heading">
+        <h2>Projekt unterstützen</h2>
+        <button
+          id="donate-close"
+          type="button"
+          class="secondary"
+          aria-label="Spendenbereich schließen"
+        >
+          ×
+        </button>
+      </div>
+      <p id="support-message" role="status">Zahlung wird vorbereitet.</p>
+      <form id="support-form" hidden>
+        <label class="field"
+          ><span>Betrag in Euro</span
+          ><input
+            id="support-amount"
+            type="number"
+            min="1"
+            max="1000"
+            step="0.01"
+            value="5"
+            required
+        /></label>
+        <p class="hint">
+          Beim Öffnen des Zahlungsformulars wird Stripe geladen. Zahlungsdaten
+          verarbeitet Stripe. <a href="/datenschutz">Datenschutz</a>
+        </p>
+        <button class="primary" type="submit">Zahlung mit Stripe öffnen</button>
+      </form>
+      <div id="stripe-checkout"></div>
+    </section>
+    <dialog id="rules-dialog">
+      <h2>Abstimmungsregeln</h2>
+      <div id="rules-content"></div>
+      <button id="rules-close" type="button">Schließen</button>
+    </dialog>
     <dialog id="legal">
       <h2 id="legal-title"></h2>
+      <p id="legal-draft" class="legal-draft" hidden>Entwurf · Noch nicht für den Livegang freigegeben.</p>
       <p id="legal-text" class="preserve"></p>
       <div id="privacy-actions" hidden>
         <p class="hint">

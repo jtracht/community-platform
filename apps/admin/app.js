@@ -8,6 +8,8 @@ let extra = { steps: [], evaluations: [], dependencies: [], appeals: [] },
   moduleHealth = { manifests: [], health: [], history: [] },
   users = null;
 const selectedIdeas = new Set();
+let loggedOut = false,
+  viewRevision = 0;
 function allowed(permission) {
   return dashboard.admin.permissions.includes(permission);
 }
@@ -67,15 +69,20 @@ function action(label, fn, primary = false) {
   return b;
 }
 async function reload() {
+  if (loggedOut) return;
+  const revision = ++viewRevision;
   dashboard = await api("dashboard");
   if (allowed("operations.manage"))
     extra = { ...(await api("workflow")), operations: await api("operations") };
   else if (allowed("ideas.read")) extra.appeals = await api("appeals");
   if (allowed("modules.read")) moduleHealth = await api("modules/health");
+  if (loggedOut || revision !== viewRevision) return;
   document.querySelector("#logout").hidden = false;
   draw();
 }
 function login() {
+  loggedOut = true;
+  viewRevision++;
   nav.replaceChildren();
   document.querySelector("#logout").hidden = true;
   content.replaceChildren();
@@ -103,6 +110,7 @@ function login() {
     b.disabled = true;
     try {
       await api("login", "POST", Object.fromEntries(new FormData(form)));
+      loggedOut = false;
       await reload();
     } catch (err) {
       message.textContent = err.message;
@@ -736,6 +744,8 @@ function operations() {
   );
 }
 document.querySelector("#logout").onclick = async () => {
+  loggedOut = true;
+  viewRevision++;
   try {
     await api("logout", "POST");
     login();
@@ -1082,6 +1092,12 @@ function operationTools() {
   const box = el("section", undefined, "panel");
   box.append(el("h2", "Konfiguration und Hintergrundaufgaben"));
   if (extra.operations) {
+    if (extra.operations.readiness) {
+      box.append(el("h3", "Prüfung vor dem Livegang"));
+      for (const check of extra.operations.readiness.checks)
+        box.append(el("p", (check.status === "pass" ? "OK" : check.status === "blocker" ? "Offen" : "Hinweis") + " · " + check.message));
+      box.append(el("p", "Hosting, Anbieterzustellung und Wiederherstellung sind gesondert nachzuweisen. Diese Prüfung erteilt keine Produktionsfreigabe.", "hint"));
+    }
     for (const [key, value] of Object.entries(extra.operations.checks))
       box.append(el("p", key + ": " + value));
     box.append(el("p", "Aktive Adminsitzungen: " + extra.operations.sessions));

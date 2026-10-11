@@ -1,0 +1,26 @@
+ENTWURF – Betreiberangaben ergänzen und vor Veröffentlichung freigeben.
+Stand: 11.10.2026
+
+1. Diensteanbieter
+Die Communityplattform ist ein Projekt von Tracht Digital Solutions.
+Rechtlicher Diensteanbieter: {{OPERATOR_NAME}}
+[ERGÄNZEN: Vollständigen rechtlichen Namen und Rechtsform prüfen. Bei Einzelunternehmen den vollständigen Namen der Inhaberin oder des Inhabers ergänzen; bei juristischen Personen die vertretungsberechtigte Person nennen.]
+
+2. Anschrift und Kontakt
+{{OPERATOR_ADDRESS}}
+E-Mail: {{OPERATOR_EMAIL}}
+[ERGÄNZEN: Weiteren tatsächlich erreichbaren Weg für unmittelbare Kommunikation, zum Beispiel eine Telefonnummer, angeben.]
+
+3. Register und Identifikationsnummern
+[ERGÄNZEN: Falls eingetragen, Registergericht, Registerart und Registernummer angeben; andernfalls diesen Absatz entfernen.]
+[ERGÄNZEN: Falls vorhanden, Umsatzsteuer-Identifikationsnummer beziehungsweise Wirtschafts-Identifikationsnummer angeben. Keine private Steuernummer veröffentlichen. Andernfalls diesen Absatz entfernen.]
+
+4. Weitere anwendbare Pflichtangaben
+[ERGÄNZEN: Etwaige berufsrechtliche Pflichtangaben, behördliche Zulassung und eine gegebenenfalls erforderliche Angabe zur Verbraucherschlichtung anhand des konkreten Unternehmens prüfen. Nur tatsächlich anwendbare Angaben veröffentlichen.]
+
+5. Projekt und Inhalte
+Der Quellcode der Plattform steht unter Apache-2.0. Eingereichte Communitybeiträge unterliegen gesonderten Beitragsbedingungen. Die Softwarelizenz überträgt keine Rechte an diesen Beiträgen.
+Technische Mitarbeit und Codebesprechungen finden im öffentlichen Projekt auf GitHub statt: https://github.com/jtracht/community-platform
+
+6. Freiwillige Unterstützung
+Projektunterstützung ist freiwillig und vermittelt keine zusätzlichen Stimmrechte oder Einfluss auf die Ergebnisfreigabe. Zahlungen werden über Stripe abgewickelt, sofern die Zahlungsfunktion eingerichtet ist. Eine steuerlich abzugsfähige Spende oder die Ausstellung einer Zuwendungsbestätigung wird nicht zugesichert.

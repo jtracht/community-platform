@@ -10,13 +10,15 @@
   },
   "scripts": {
     "dev": "tsx watch apps/server/src/main.ts",
-    "build": "tsc",
+    "build": "tsc && node scripts/build-assets.mjs",
     "start": "node --env-file=.env dist/apps/server/src/main.js",
+    "preflight": "node --env-file=.env dist/scripts/preflight.js",
     "test": "tsx --test --test-concurrency=1 tests/*.test.ts",
     "test:browser": "playwright test",
     "check": "tsc --noEmit",
     "migrate": "tsx scripts/migrate.ts",
-    "setup:admin": "tsx scripts/setup-admin.ts"
+    "setup:admin": "tsx scripts/setup-admin.ts",
+    "postinstall": "node scripts/build-assets.mjs"
   },
   "dependencies": {
     "@fastify/cookie": "^11.0.0",
@@ -24,14 +26,17 @@
     "@fastify/rate-limit": "^10.0.0",
     "@fastify/static": "^10.1.6",
     "fastify": "^5.0.0",
+    "motion": "^14.1.0",
     "mysql2": "^3.0.0",
     "nodemailer": "^10.1.0",
     "otpauth": "^9.0.0",
+    "stripe": "^23.0.0",
     "zod": "^4.0.0"
   },
   "devDependencies": {
     "@axe-core/playwright": "^4.13.0",
     "@playwright/test": "^1.64.0",
+    "@stripe/stripe-js": "^10.0.0",
     "@types/node": "^24.0.0",
     "@types/nodemailer": "^8.0.2",
     "tsx": "^4.0.0",

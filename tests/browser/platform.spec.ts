@@ -37,6 +37,28 @@ test.afterEach(async () => {
   ))
     await changePoll(p.id, "close", randomUUID());
 });
+test("Expandable checkout loads Stripe only on demand and confirms payment through the server", async ({ page }) => {
+  let scripts = 0;
+  await page.route("**/api/support", route => route.fulfill({ json: { embedded: true, publishableKey: "pk_test_fixture" } }));
+  await page.route("https://js.stripe.com/endive/stripe.js", route => {
+    scripts++;
+    return route.fulfill({ contentType: "application/javascript", body: `window.Stripe = () => ({ createEmbeddedCheckoutPage: async (options) => ({ mount: (selector) => { const button = document.createElement('button'); button.textContent = 'Testzahlung bestätigen'; button.onclick = options.onComplete; document.querySelector(selector).append(button); }, destroy: () => {} }) });` });
+  });
+  await page.route("**/api/support/session", route => route.fulfill({ json: { clientSecret: "test_fixture", id: "cs_test_fixture", expires: 2000000000, proof: "a".repeat(64) } }));
+  await page.route("**/api/support/status", route => route.fulfill({ json: { paid: true } }));
+  await page.goto("/");
+  await page.locator("#donate-open").click();
+  await expect(page.locator("#support-form")).toBeVisible();
+  expect(scripts).toBe(0);
+  await page.getByRole("button", { name: "Zahlung mit Stripe öffnen" }).click();
+  await page.getByRole("button", { name: "Testzahlung bestätigen" }).click();
+  await expect(page.locator("#support-message")).toContainText("Stripe hat die Zahlung bestätigt");
+  expect(scripts).toBe(1);
+  expect(new URL(page.url()).pathname).toBe("/");
+  await page.locator("#donate-close").click();
+  await expect(page.locator("#donation-panel")).toBeHidden();
+  await expect(page.locator("#donate-open")).toBeFocused();
+});
 for (const type of ["single", "multiple", "ranking", "text"] as const) {
   test(`Mobile ${type} voting, duplicate protection and accessibility`, async ({
     page,
@@ -68,6 +90,9 @@ for (const type of ["single", "multiple", "ranking", "text"] as const) {
       "Welche Richtung wählen wir gemeinsam?",
     );
     expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
+    await expect(page.locator(".submit-count")).toHaveText("Bereits 0 Stimmen");
+    await expect(page.locator(".countdown")).toHaveCount(0);
+    const ballot = await page.locator(".ballot-panel").elementHandle();
     if (type === "text") {
       await page
         .getByRole("textbox", { name: "Deine Idee" })
@@ -77,6 +102,15 @@ for (const type of ["single", "multiple", "ranking", "text"] as const) {
       await page.getByRole("radio", { name: "Einfachheit" }).check();
     else if (type === "multiple") {
       await page.getByRole("checkbox", { name: "Einfachheit" }).check();
+      await page.getByRole("checkbox", { name: "Transparenz" }).check();
+      await expect(page.getByText("Auswahl vollständig")).toBeVisible();
+      await expect(
+        page.getByRole("checkbox", { name: "Zugänglichkeit" }),
+      ).toBeDisabled();
+      await page.getByRole("checkbox", { name: "Transparenz" }).uncheck();
+      await expect(
+        page.getByRole("checkbox", { name: "Zugänglichkeit" }),
+      ).toBeEnabled();
       await page.getByRole("checkbox", { name: "Transparenz" }).check();
     } else {
       await page
@@ -90,9 +124,17 @@ for (const type of ["single", "multiple", "ranking", "text"] as const) {
     await expect(
       page.getByText("Danke. Deine Stimme wurde gespeichert."),
     ).toBeVisible();
-    await expect(
-      page.getByRole("heading", { name: "Ergebnis", exact: true }),
-    ).toBeVisible();
+    expect(await ballot!.evaluate(node => node.isConnected)).toBe(true);
+    await expect(page.locator(".ballot-panel.vote-complete")).toBeVisible();
+    await expect(page.getByRole("button", { name: "Bereits 1 Stimme", exact: true })).toBeDisabled();
+    await expect(page.locator(".countdown")).toBeVisible();
+    await expect(page.locator('.ballot-panel input, .ballot-panel textarea')).toHaveCount(0);
+    if (type === "single" || type === "multiple")
+      await expect(page.getByRole("progressbar")).toHaveCount(3);
+    if (type !== "text")
+      await expect(page.locator(".result-option .bar")).toHaveCount(3);
+    if (type === "ranking")
+      await expect(page.locator(".result-option").first()).toContainText("Transparenz");
     await page.reload();
     await expect(
       page.getByRole("button", { name: "Stimme abgeben" }),
@@ -118,12 +160,22 @@ test("Waiting state, legal information and protected admin login are accessible"
   await page.goto("/");
   await expect(
     page.getByRole("heading", {
-      name: "Der nächste Schritt entsteht gemeinsam.",
+      name: "Aktuell keine Abstimmung.",
     }),
   ).toBeVisible();
   await page.getByRole("link", { name: "Impressum" }).click();
   await expect(page.getByRole("dialog")).toBeVisible();
+  await expect(page.locator("#legal-text")).toContainText("Browser-Testbetreiber");
+  await expect(page.locator("#legal-draft")).toBeVisible();
   await page.getByRole("button", { name: "Schließen" }).click();
+  await page.getByRole("link", { name: "Datenschutz", exact: true }).click();
+  await expect(page.locator("#legal-text")).toContainText("pseudonymisiert");
+  await page.getByRole("button", { name: "Schließen" }).click();
+  await page.goto("/datenschutz");
+  await expect(page.getByRole("heading", { name: "Datenschutz", exact: true })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "8. Freiwillige Projektunterstützung über Stripe", exact: true })).toBeVisible();
+  expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   await page.goto("/admin");
   await expect(page.getByRole("textbox", { name: "E-Mail" })).toBeVisible();
   expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);

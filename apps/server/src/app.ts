@@ -35,6 +35,8 @@ import { workflowRoutes } from "./workflow.js";
 import { githubManagementRoutes } from "./github.js";
 import { sharedLimit } from "./limits.js";
 import { legalRoutes } from "./legal.js";
+import { supportRoutes } from "./support.js";
+import { loadLegalContent, type LegalContent } from "./legal-content.js";
 type Admin = {
   id: string;
   email: string;
@@ -47,7 +49,8 @@ declare module "fastify" {
   }
 }
 const uuid = z.uuid();
-export async function buildApp() {
+export async function buildApp(legal?: LegalContent) {
+  const legalContent = legal ?? await loadLegalContent();
   const app = Fastify({
     bodyLimit: 16384,
     trustProxy: process.env.TRUSTED_PROXY
@@ -71,16 +74,37 @@ export async function buildApp() {
     contentSecurityPolicy: {
       directives: {
         defaultSrc: ["'self'"],
-        scriptSrc: ["'self'"],
+        scriptSrc: [
+          "'self'",
+          "https://js.stripe.com",
+          "https://*.js.stripe.com",
+          "https://checkout.stripe.com",
+        ],
         styleSrc: ["'self'"],
-        imgSrc: ["'self'", "data:"],
-        connectSrc: ["'self'"],
+        imgSrc: ["'self'", "data:", "https://*.stripe.com"],
+        connectSrc: [
+          "'self'",
+          "https://api.stripe.com",
+          "https://checkout.stripe.com",
+        ],
+        frameSrc: [
+          "https://js.stripe.com",
+          "https://*.js.stripe.com",
+          "https://hooks.stripe.com",
+          "https://checkout.stripe.com",
+        ],
         formAction: ["'self'"],
         frameAncestors: ["'none'"],
       },
     },
   });
-  await app.register(rateLimit, { max: 120, timeWindow: "1 minute" });
+  await app.register(rateLimit, {
+    max: 120,
+    timeWindow: "1 minute",
+    allowList: (req) =>
+      (req.method === "GET" || req.method === "HEAD") &&
+      req.url.startsWith("/assets/"),
+  });
   await app.register(staticPlugin, {
     root: resolve("apps/public"),
     prefix: "/assets/",
@@ -216,14 +240,6 @@ export async function buildApp() {
       .type("text/plain")
       .send("User-agent: *\nDisallow: /admin\nDisallow: /api/\n"),
   );
-  app.get("/api/legal", async () => ({
-    operator: process.env.OPERATOR_NAME ?? "",
-    address: process.env.OPERATOR_ADDRESS ?? "",
-    email: process.env.OPERATOR_EMAIL ?? "",
-    privacy: process.env.LEGAL_PRIVACY_TEXT ?? "",
-    contributions: process.env.LEGAL_CONTRIBUTION_TERMS ?? "",
-    reviewed: process.env.LEGAL_REVIEWED === "true",
-  }));
   app.get("/api/privacy/export", async (req, reply) => {
     const entries = [];
     const session = req.cookies.participant_session
@@ -675,7 +691,8 @@ export async function buildApp() {
   await participationRoutes(app);
   await workflowRoutes(app);
   await githubManagementRoutes(app);
-  await legalRoutes(app);
+  await legalRoutes(app, legalContent);
+  await supportRoutes(app);
   return app;
 }
 async function githubRoutes(app: FastifyInstance) {

@@ -118,10 +118,20 @@ export async function current(
   if (p.status !== "active" && state.transition_mode === "waiting")
     return { mode: "waiting", message: state.waiting_message };
   const visible = maySeeResults(p, voted);
+  // Turnout is public by design; answer distributions retain their visibility gates.
+  const participationCount = p.released
+    ? (await aggregate(p)).total
+    : (
+        await rows<{ total: number }>(
+          "SELECT COUNT(*) AS total FROM votes WHERE poll_id=? AND valid=TRUE",
+          [p.id],
+        )
+      )[0]!.total;
   return {
     mode: p.status === "active" ? "poll" : "results",
     poll: p,
     voted,
+    participationCount,
     verified: p.rules.participation === "anonymous" || Boolean(voter),
     results: visible ? await aggregate(p) : null,
   };

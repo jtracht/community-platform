@@ -8,3 +8,4 @@ backups/
 *.log
 playwright-report/
 test-results/
+apps/public/vendor/

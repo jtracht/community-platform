@@ -1,0 +1,20 @@
+ENTWURF – Nutzungsumfang und rechtliche Wirksamkeit vor Veröffentlichung freigeben.
+Stand: 11.10.2026
+
+1. Ihre Beiträge
+Bei einer Ideensammlung können Sie Vorschläge für die Weiterentwicklung der Plattform einreichen. Sie behalten Ihre Rechte an eigenen, geschützten Beiträgen. Bitte reichen Sie nur Inhalte ein, deren Nutzung Sie gestatten dürfen, und keine vertraulichen Informationen, personenbezogenen Daten anderer Personen oder rechtswidrigen Inhalte.
+
+2. Vereinbarte Nutzung
+Mit Zustimmung zu diesen Bedingungen gestatten Sie {{OPERATOR_NAME}}, Ihren Beitrag nicht ausschließlich, unentgeltlich und zeitlich unbefristet für die Prüfung, Zusammenfassung, Communityabstimmung, Dokumentation und Umsetzung innerhalb dieses Projekts zu nutzen. Dies umfasst sachliche Kürzungen und redaktionelle Bearbeitungen, die den Sinn des Vorschlags wahren, sowie eine Veröffentlichung geprüfter Vorschläge und Anforderungen im zugehörigen öffentlichen GitHub-Projekt. Sie können Ihren Beitrag weiterhin selbst nutzen und anderen die Nutzung erlauben. Urheberpersönlichkeitsrechte und gesetzliche Ansprüche bleiben unberührt.
+[ERGÄNZEN: Genau diesen Lizenzumfang, Reichweite zulässiger Bearbeitung, Namensnennung und Veröffentlichung sowie Verhältnis zu späteren Löschanfragen rechtlich prüfen und freigeben.]
+
+3. Prüfung und Entscheidungen
+Die Einreichung garantiert keine Veröffentlichung oder Umsetzung. Administratoren können Inhalte auf Regelverstöße prüfen, ähnliche Vorschläge zusammenführen und Ablehnungen begründen. Technische Prüfhinweise ersetzen keine verbindliche Communityentscheidung. Die Umfrageregeln bestimmen das Abstimmungsverfahren. Freigaben für Architektur, Sicherheit, Code und Releases liegen beim Product Owner. Ein Einspruch gegen die Moderation ist über die zu Ihrem Beitrag bereitgestellte Funktion oder den Betreiberkontakt möglich.
+
+4. Datenschutz und Softwarelizenz
+Eine Nutzungserlaubnis für Inhalte ersetzt keine datenschutzrechtliche Grundlage. Ihre Rechte zu personenbezogenen Daten sind in der Datenschutzerklärung beschrieben. Die Open-Source-Lizenz Apache-2.0 gilt für den Plattformquellcode und nicht automatisch für Ihre eingereichten Inhalte.
+
+5. Kontakt
+Betreiber: {{OPERATOR_NAME}}
+{{OPERATOR_ADDRESS}}
+E-Mail: {{OPERATOR_EMAIL}}

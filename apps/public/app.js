@@ -1,5 +1,55 @@
 const root = document.querySelector("#poll"),
   message = document.querySelector("#message");
+let countdown;
+function timer(p) {
+  const box = el("span", undefined, "countdown");
+  const ring = el("span", undefined, "timer-ring");
+  ring.setAttribute("aria-hidden", "true");
+  const text = el("span");
+  box.append(ring, text);
+  box.setAttribute("aria-live", "off");
+  function tick() {
+    const seconds = Math.max(
+      0,
+      p.status === "active"
+        ? Math.ceil((Date.parse(p.endsAt) - Date.now()) / 1000)
+        : 0,
+    );
+    const days = Math.floor(seconds / 86400),
+      hours = Math.floor(seconds / 3600) % 24,
+      minutes = Math.floor(seconds / 60) % 60;
+    text.textContent =
+      seconds === 0
+        ? "Abgelaufen"
+        : days
+          ? `${days} T ${hours} Std`
+          : `${String(Math.floor(seconds / 3600)).padStart(2, "0")}:${String(minutes).padStart(2, "0")}:${String(seconds % 60).padStart(2, "0")}`;
+    box.setAttribute(
+      "aria-label",
+      seconds
+        ? "Verbleibende Zeit: " + text.textContent
+        : "Abstimmung abgelaufen",
+    );
+    ring.style.setProperty(
+      "--progress",
+      Math.max(
+        0,
+        Math.min(
+          1,
+          seconds /
+            Math.max(1, (Date.parse(p.endsAt) - Date.parse(p.startsAt)) / 1000),
+        ),
+      ) *
+        360 +
+        "deg",
+    );
+    if (!seconds) clearInterval(countdown);
+  }
+  tick();
+  if (p.status === "active" && Date.parse(p.endsAt) > Date.now())
+    countdown = setInterval(tick, 1000);
+  return box;
+}
 function el(tag, text, cls) {
   const e = document.createElement(tag);
   if (text !== undefined) e.textContent = text;
@@ -12,94 +62,111 @@ async function api(url, options) {
   if (!r.ok) throw new Error(data.error || "Anfrage fehlgeschlagen.");
   return data;
 }
-function showResults(data, type) {
-  const box = el("section", undefined, "panel");
-  box.append(
-    el("h2", "Ergebnis"),
-    el(
-      "p",
-      `${data.total} gültige Stimmen · Mindestbeteiligung ${data.quorumReached ? "erreicht" : "noch nicht erreicht"}`,
-      "hint",
-    ),
-  );
-  if (type === "ranking")
-    box.append(
-      el(
-        "p",
-        "Borda-Auswertung: N−1 Punkte für Platz 1 bis 0 für den letzten Platz. Prozentwerte beziehen sich je Option auf die maximal möglichen Punkte.",
-        "hint",
-      ),
-    );
-  if (type === "multiple")
-    box.append(
-      el(
-        "p",
-        "Prozentwerte beziehen sich auf gültige Teilnehmende. Bei Mehrfachauswahl kann ihre Summe über 100 % liegen.",
-        "hint",
-      ),
-    );
-  for (const item of [...data.items].sort((a, b) => b.score - a.score)) {
-    const row = el("div", undefined, "result");
-    const line = el("div", undefined, "result-line");
-    line.append(el("span", item.label), el("strong", `${item.percent} %`));
-    const bar = el("div", undefined, "bar"),
-      fill = el("div", undefined, "bar-fill");
-    fill.style.setProperty("--value", item.percent + "%");
-    bar.append(fill);
-    row.append(line, bar);
-    box.append(row);
+function turnout(data) {
+  const count = data.participationCount ?? data.results?.total ?? 0;
+  return new Intl.NumberFormat("de-DE").format(count) +
+    (count === 1 ? " Stimme" : " Stimmen");
+}
+function addResultRules(data) {
+  const box = document.querySelector("#rules-content");
+  box.querySelectorAll(".result-rule").forEach(item => item.remove());
+  if (!data.results) return;
+  const note = text => box.append(el("p", text, "result-rule"));
+  note("Mindestbeteiligung " + (data.results.quorumReached ? "erreicht." : "noch nicht erreicht."));
+  if (data.poll.rules.type === "multiple")
+    note("Prozentwerte beziehen sich auf gültige Teilnehmende. Bei Mehrfachauswahl kann ihre Summe über 100 % liegen.");
+  if (data.poll.rules.type === "ranking")
+    note("Borda-Auswertung: N−1 Punkte für Platz 1 bis 0 für den letzten Platz. Prozentwerte beziehen sich je Option auf die maximal möglichen Punkte.");
+  if (data.results.tie)
+    note(data.results.runoffRequired ? "Gleichstand: Eine Stichwahl muss vom Product Owner vorbereitet werden." : "Gleichstand: gleiche Priorität.");
+}
+function showBallotOutcome(data, box, order) {
+  const p = data.poll;
+  addResultRules(data);
+  box ??= el("section", undefined, "panel ballot-panel");
+  box.classList.add("vote-complete");
+  box.setAttribute("aria-label", data.results ? "Abstimmungsergebnis" : (data.voted ? "Gespeicherte Abstimmung" : "Abstimmung beendet"));
+  let fs = box.querySelector("fieldset");
+  if (!fs) {
+    fs = el("fieldset");
+    box.append(fs);
   }
-  if (data.tie)
-    box.append(
-      el(
-        "p",
-        data.runoffRequired
-          ? "Gleichstand: Eine Stichwahl muss vom Product Owner vorbereitet werden."
-          : "Gleichstand: gleiche Priorität.",
-        "hint",
-      ),
-    );
-  if (!data.items.length)
-    box.append(
-      el(
-        "p",
-        "Freitextbeiträge werden geschützt geprüft. Die Anzahl eingegangener Beiträge wird angezeigt.",
-      ),
-    );
+  fs.replaceChildren(el("legend", data.results
+    ? (p.released ? "Ergebnis" : "Zwischenstand")
+    : (data.voted ? "Stimme gespeichert" : "Abstimmung beendet")));
+  const items = new Map((data.results?.items ?? []).map(item => [item.id, item]));
+  for (const id of order ?? p.rules.options.map((_, index) => index)) {
+    const option = el("div", undefined, "option result-option"),
+      line = el("div", undefined, "result-line");
+    line.append(el("span", p.rules.options[id]));
+    const item = items.get(id);
+    if (item) {
+      line.append(el("strong", new Intl.NumberFormat("de-DE").format(item.percent) + " %"));
+      const bar = el("div", undefined, "bar"), fill = el("div", undefined, "bar-fill");
+      bar.setAttribute("role", "progressbar");
+      bar.setAttribute("aria-label", p.rules.options[id]);
+      bar.setAttribute("aria-valuemin", "0");
+      bar.setAttribute("aria-valuemax", "100");
+      bar.setAttribute("aria-valuenow", String(item.percent));
+      fill.style.setProperty("--value", item.percent + "%");
+      bar.append(fill);
+      option.append(bar);
+    }
+    option.append(line);
+    fs.append(option);
+  }
+  if (p.rules.type === "text")
+    fs.append(el("p", "Ideen werden vor ihrer Veröffentlichung geprüft.", "hint"));
+  let button = box.querySelector(".vote-submit");
+  if (!button) {
+    button = el("button", undefined, "primary vote-submit");
+    box.append(button);
+  }
+  button.type = "button";
+  button.disabled = true;
+  button.textContent = "Bereits " + turnout(data);
+  let meta = box.querySelector(".submit-count");
+  if (!meta) {
+    meta = el("p", undefined, "submit-count");
+    box.append(meta);
+  }
+  meta.replaceChildren();
+  if (data.voted) meta.append(timer(p));
+  else meta.hidden = true;
+  if (!data.results)
+    fs.append(el("p", p.rules.visibility === "after_close"
+      ? "Ergebnisse nach Ende der Abstimmung."
+      : p.rules.visibility === "after_release"
+        ? "Ergebnisse nach Freigabe."
+        : "Die Ergebnisse sind nicht öffentlich sichtbar.", "hint result-note"));
+  if (data.voted) {
+    message.textContent = "Danke. Deine Stimme wurde gespeichert.";
+    message.classList.add("success");
+  }
   return box;
 }
 function render(data) {
+  clearInterval(countdown);
+  message.textContent = "";
+  message.classList.remove("success");
   root.replaceChildren();
-  root.append(
-    el(
-      "p",
-      data.mode === "waiting"
-        ? "ZWISCHEN ZWEI ENTSCHEIDUNGEN"
-        : "COMMUNITY-UMFRAGE",
-      "eyebrow",
-    ),
-  );
+  document.querySelector("#rules-open").hidden = data.mode === "waiting";
+  document.querySelector("#rules-content").replaceChildren();
   if (data.mode === "waiting") {
     root.append(
-      el("h1", "Der nächste Schritt entsteht gemeinsam."),
+      el("h1", "Aktuell keine Abstimmung."),
       el("p", data.message, "description"),
     );
     return;
   }
   const p = data.poll;
-  root.append(el("h1", p.title), el("p", p.description, "description"));
-  const meta = el("div", undefined, "meta");
-  meta.append(
-    el(
-      "span",
-      p.status === "active"
-        ? "● Abstimmung geöffnet"
-        : "Abstimmung abgeschlossen",
-    ),
-    el("span", "Ende: " + new Date(p.endsAt).toLocaleString("de-DE")),
-    el("span", "Regelversion " + p.rules.version),
-  );
-  root.append(meta);
+  root.append(el("h1", p.title));
+  if (
+    p.description &&
+    p.description !==
+      "Wir starten mit einer Frage. Du entscheidest mit, welche Richtung wir gemeinsam einschlagen. Wähle bis zu zwei Vorschläge."
+  )
+    root.append(el("p", p.description, "description"));
   const scheduleBox = el("section", undefined, "panel");
   root.append(scheduleBox);
   scheduleBox.hidden = true;
@@ -129,8 +196,23 @@ function render(data) {
     };
     root.append(logout);
   }
-  const ruleBox = el("details", undefined, "panel");
-  ruleBox.append(el("summary", "Abstimmungsregeln"));
+  const ruleBox = document.querySelector("#rules-content");
+  ruleBox.append(
+    el(
+      "p",
+      "Anonyme Stimmen verwenden eine Browserkennung. Gelöschte Cookies und weitere Geräte können technisch nicht zuverlässig ausgeschlossen werden.",
+    ),
+    el("p", "Regelversion " + p.rules.version),
+    el(
+      "p",
+      "Teilnahme: " +
+        {
+          anonymous: "anonym je Browser",
+          email: "verifizierte E-Mail je Umfrage",
+          account: "verifiziertes Konto",
+        }[p.rules.participation],
+    ),
+  );
   const visibility = {
     hidden: "Ergebnisse werden nicht öffentlich angezeigt.",
     after_vote: "Ergebnisse nach der eigenen Stimmabgabe.",
@@ -149,37 +231,8 @@ function render(data) {
           : "Bei Gleichstand gilt gleiche Priorität."),
     ),
   );
-  root.append(ruleBox);
-  if (data.results) {
-    if (!p.released)
-      root.append(
-        el(
-          "p",
-          "Vorläufiger Stand: Die Auswertung ist noch nicht abschließend freigegeben.",
-          "hint",
-        ),
-      );
-    root.append(showResults(data.results, p.rules.type));
-  }
-  if (data.voted) {
-    root.append(
-      el("section", "Danke. Deine Stimme wurde gespeichert.", "panel"),
-    );
-    if (!data.results)
-      root.append(
-        el(
-          "p",
-          "Ergebnisse werden gemäß den festgelegten Sichtbarkeitsregeln angezeigt.",
-          "hint",
-        ),
-      );
-    return;
-  }
-  if (data.mode !== "poll") {
-    if (!data.results)
-      root.append(
-        el("p", "Die Ergebnisse sind derzeit nicht freigegeben.", "panel"),
-      );
+  if (data.voted || data.mode !== "poll") {
+    root.append(showBallotOutcome(data));
     return;
   }
   if (p.rules.participation !== "anonymous" && !data.verified) {
@@ -227,7 +280,7 @@ function render(data) {
     root.append(form);
     return;
   }
-  const form = el("form", undefined, "panel"),
+  const form = el("form", undefined, "panel ballot-panel"),
     fs = el("fieldset");
   fs.append(
     el(
@@ -236,7 +289,9 @@ function render(data) {
         ? "Bringe alle Optionen in deine Reihenfolge."
         : p.rules.type === "text"
           ? "Welche Idee möchtest du einbringen?"
-          : "Wähle deine Antwort.",
+          : p.rules.type === "multiple"
+            ? "Wähle deine Antworten."
+            : "Wähle deine Antwort.",
     ),
   );
   let order = p.rules.options.map((_, i) => i);
@@ -316,26 +371,36 @@ function render(data) {
       label.append(input, el("span", option));
       fs.append(label);
     });
-    if (p.rules.type === "multiple")
-      fs.append(
-        el(
-          "p",
-          `${p.rules.minChoices} bis ${p.rules.maxChoices} Antworten auswählen.`,
-          "hint",
-        ),
-      );
+    if (p.rules.type === "multiple") {
+      const status = el("p", "", "selection-state");
+      status.setAttribute("role", "status");
+      status.hidden = true;
+      function updateSelection() {
+        const inputs = [...fs.querySelectorAll('input[name="choice"]')];
+        const count = inputs.filter((input) => input.checked).length;
+        const full = count >= p.rules.maxChoices;
+        status.textContent = full ? "Auswahl vollständig" : "";
+        status.hidden = !full;
+        status.classList.toggle("selection-full", full);
+        inputs.forEach((input) => {
+          input.disabled = full && !input.checked;
+        });
+      }
+      fs.addEventListener("change", updateSelection);
+      fs.append(status);
+    }
   }
-  fs.append(
-    el(
-      "p",
-      "Anonyme Teilnahme: Eine Stimme je Browser. Das Löschen von Cookies oder weitere Geräte können technisch nicht zuverlässig ausgeschlossen werden.",
-      "hint",
-    ),
-  );
   form.append(fs);
-  const submit = el("button", "Stimme abgeben →", "primary");
+  const submit = el("button", "Stimme abgeben →", "primary vote-submit");
   submit.type = "submit";
   form.append(submit);
+  form.append(
+    el(
+      "p",
+      "Bereits " + turnout(data),
+      "vote-count submit-count",
+    ),
+  );
   form.onsubmit = async (e) => {
     e.preventDefault();
     message.textContent = "";
@@ -348,16 +413,17 @@ function render(data) {
           : p.rules.type === "ranking"
             ? order
             : fd.getAll("choice").map(Number);
-      render(
-        await api("/api/poll/" + p.id + "/vote", {
+      const outcome = await api("/api/poll/" + p.id + "/vote", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             answer,
             termsAccepted: fd.get("terms") === "on",
           }),
-        }),
-      );
+        });
+      if (outcome.poll?.id === p.id && outcome.voted)
+        showBallotOutcome(outcome, form, p.rules.type === "ranking" ? order : undefined);
+      else render(outcome);
     } catch (err) {
       message.textContent = err.message;
       submit.disabled = false;
@@ -373,9 +439,10 @@ document.querySelectorAll("[data-legal]").forEach(
         const data = await api("/api/legal");
         const key = button.dataset.legal;
         document.querySelector("#legal-title").textContent = button.textContent;
+        document.querySelector("#legal-draft").hidden = data.reviewed === true;
         document.querySelector("#legal-text").textContent =
           key === "imprint"
-            ? [data.operator, data.address, data.email]
+            ? data.imprint || [data.operator, data.address, data.email]
                 .filter(Boolean)
                 .join("\n") ||
               "Betreiberangaben werden vor dem Livegang ergänzt."
@@ -493,4 +560,38 @@ function refreshPoll() {
 refreshPoll();
 window.addEventListener("hashchange", () => {
   if (location.hash.includes("verify=")) refreshPoll();
+});
+
+document.querySelector("#rules-open").onclick = () =>
+  document.querySelector("#rules-dialog").showModal();
+document.querySelector("#rules-close").onclick = () =>
+  document.querySelector("#rules-dialog").close();
+
+const moreLinks = document.querySelector(".more-links"),
+  moreMenu = moreLinks.querySelector(".more-menu"),
+  moreToggle = moreLinks.querySelector("summary");
+function positionMoreMenu() {
+  if (!moreLinks.open) return;
+  moreMenu.style.setProperty("--menu-shift", "0px");
+  const bounds = moreMenu.getBoundingClientRect();
+  const shift = bounds.left < 16
+    ? 16 - bounds.left
+    : Math.min(0, document.documentElement.clientWidth - 16 - bounds.right);
+  moreMenu.style.setProperty("--menu-shift", shift + "px");
+}
+moreLinks.addEventListener("toggle", positionMoreMenu);
+window.addEventListener("resize", positionMoreMenu);
+document.addEventListener("click", (event) => {
+  if (!moreLinks.contains(event.target) || event.target.closest(".more-menu a, .more-menu button"))
+    moreLinks.open = false;
+});
+document.addEventListener("focusin", (event) => {
+  if (!moreLinks.contains(event.target)) moreLinks.open = false;
+});
+moreLinks.addEventListener("keydown", (event) => {
+  if (event.key === "Escape" && moreLinks.open) {
+    moreLinks.open = false;
+    moreToggle.focus();
+    event.preventDefault();
+  }
 });
