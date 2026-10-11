@@ -1,0 +1,65 @@
+name: Publish approved production release
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Tested draft release to publish, e.g. v0.1.0
+        required: true
+        type: string
+permissions:
+  contents: read
+concurrency:
+  group: publish-${{ inputs.tag }}
+  cancel-in-progress: false
+jobs:
+  publish:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    environment: release-approval
+    permissions:
+      contents: write
+    env:
+      RELEASE_TAG: ${{ inputs.tag }}
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+    steps:
+      - name: Validate release tag
+        run: |
+          [[ "$RELEASE_TAG" =~ ^v(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$ ]] || { echo 'Expected stable version tag vMAJOR.MINOR.PATCH'; exit 1; }
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: refs/tags/${{ inputs.tag }}
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: "24"
+      - name: Require draft from approved main history
+        run: |
+          export PACKAGE_DIR="$RUNNER_TEMP/publish-package"
+          echo "PACKAGE_DIR=$PACKAGE_DIR" >> "$GITHUB_ENV"
+          git merge-base --is-ancestor HEAD origin/main
+          test "$(gh release view "$RELEASE_TAG" --json isDraft --jq .isDraft)" = true
+          gh release download "$RELEASE_TAG" --pattern community-platform.tar.gz --pattern SHA256SUMS --pattern RELEASE.json --dir "$PACKAGE_DIR"
+      - name: Verify version, source and package checksum
+        run: |
+          export RELEASE_COMMIT="$(git rev-parse HEAD)"
+          node --input-type=module <<'JS'
+          import { readFile } from 'node:fs/promises';
+          import { createHash } from 'node:crypto';
+          import { join } from 'node:path';
+          import assert from 'node:assert/strict';
+          const dir = process.env.PACKAGE_DIR;
+          const manifest = JSON.parse(await readFile(join(dir, 'RELEASE.json'), 'utf8'));
+          const pkg = JSON.parse(await readFile('package.json', 'utf8'));
+          assert.equal(manifest.commit, process.env.RELEASE_COMMIT);
+          assert.equal(manifest.version, pkg.version);
+          assert.equal(`v${manifest.version}`, process.env.RELEASE_TAG);
+          const sum = (await readFile(join(dir, 'SHA256SUMS'), 'utf8')).trim();
+          assert.match(sum, /^[a-f0-9]{64}  community-platform\.tar\.gz$/);
+          const hash = createHash('sha256').update(await readFile(join(dir, 'community-platform.tar.gz'))).digest('hex');
+          assert.equal(hash, sum.slice(0, 64));
+          JS
+          tar -xOf "$PACKAGE_DIR/community-platform.tar.gz" ./RELEASE.json | cmp - "$PACKAGE_DIR/RELEASE.json"
+      - name: Publish approved draft
+        run: gh release edit "$RELEASE_TAG" --draft=false --latest

@@ -1,12 +1,22 @@
-name: Approved release candidate
+name: Production release
 on:
   push:
     tags: ["v*"]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Existing approved version tag, e.g. v0.1.0
+        required: true
+        type: string
+concurrency:
+  group: release-${{ inputs.tag || github.ref_name }}
+  cancel-in-progress: false
 permissions:
   contents: read
 jobs:
   verify:
     runs-on: ubuntu-24.04
+    timeout-minutes: 20
     services:
       mysql:
         image: mysql:8.4
@@ -24,8 +34,14 @@ jobs:
       SESSION_SECRET: ci-test-only-secret-at-least-32-characters
       TEST_MYSQL: "true"
     steps:
+      - name: Validate release tag
+        env:
+          RELEASE_TAG: ${{ inputs.tag || github.ref_name }}
+        run: |
+          [[ "$RELEASE_TAG" =~ ^v(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$ ]] || { echo 'Expected stable version tag vMAJOR.MINOR.PATCH'; exit 1; }
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
+          ref: refs/tags/${{ inputs.tag || github.ref_name }}
           fetch-depth: 0
           persist-credentials: false
       - name: Require approved main history
@@ -34,6 +50,11 @@ jobs:
         with:
           node-version: "24"
           cache: npm
+      - name: Match package version to tag
+        env:
+          RELEASE_TAG: ${{ inputs.tag || github.ref_name }}
+        run: |
+          node --input-type=module -e 'import fs from "node:fs"; const p=JSON.parse(fs.readFileSync("package.json", "utf8")); if (`v${p.version}` !== process.env.RELEASE_TAG) throw new Error("Package version must match release tag");'
       - run: npm ci
       - run: npm run check
       - run: npm run migrate
@@ -44,26 +65,34 @@ jobs:
       - run: npm run build
       - name: Package reproducible candidate
         run: |
-          SOURCE_DATE_EPOCH="$(git log -1 --format=%ct)"
-          tar --sort=name --mtime="@$SOURCE_DATE_EPOCH" --owner=0 --group=0 --numeric-owner -cf - dist apps/public apps/admin packages/database/migrations package.json package-lock.json scripts/build-assets.mjs .env.example docs LICENSE README.md CONTRIBUTING.md SECURITY.md | gzip -n > community-platform.tar.gz
-          sha256sum community-platform.tar.gz > SHA256SUMS
+          export RELEASE_COMMIT="$(git rev-parse HEAD)"
+          export SOURCE_DATE_EPOCH="$(git log -1 --format=%ct)"
+          bash scripts/package-release.sh . "$RUNNER_TEMP/release-package"
+          bash scripts/package-release.sh . "$RUNNER_TEMP/reproducibility-check"
+          cmp "$RUNNER_TEMP/release-package/community-platform.tar.gz" "$RUNNER_TEMP/reproducibility-check/community-platform.tar.gz"
+          mkdir -p "$RUNNER_TEMP/release-verification"
+          tar -xzf "$RUNNER_TEMP/release-package/community-platform.tar.gz" -C "$RUNNER_TEMP/release-verification"
+      - name: Install production dependencies from actual release archive
+        working-directory: ${{ runner.temp }}/release-verification
+        run: npm ci --omit=dev
+      - name: Verify compiled installation from archive
+        run: node scripts/verify-release.mjs "$RUNNER_TEMP/release-verification"
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: release-candidate
           if-no-files-found: error
           path: |
-            community-platform.tar.gz
-            SHA256SUMS
+            ${{ runner.temp }}/release-package/community-platform.tar.gz
+            ${{ runner.temp }}/release-package/SHA256SUMS
+            ${{ runner.temp }}/release-package/RELEASE.json
   draft:
     needs: verify
     runs-on: ubuntu-24.04
+    timeout-minutes: 10
     environment: release-approval
     permissions:
       contents: write
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
       - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           name: release-candidate
@@ -72,4 +101,11 @@ jobs:
       - name: Create draft only
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh release create "$GITHUB_REF_NAME" community-platform.tar.gz SHA256SUMS --verify-tag --draft --generate-notes
+          GH_REPO: ${{ github.repository }}
+          RELEASE_TAG: ${{ inputs.tag || github.ref_name }}
+        run: |
+          if gh release view "$RELEASE_TAG" >/dev/null 2>&1; then
+            echo 'Release already exists; refusing to replace or publish it.'
+            exit 1
+          fi
+          gh release create "$RELEASE_TAG" community-platform.tar.gz SHA256SUMS RELEASE.json --verify-tag --draft --generate-notes
