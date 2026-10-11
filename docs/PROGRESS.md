@@ -1,10 +1,14 @@
 # Fortschritt gegenüber dem Masterprompt
 
-Stand: 11. Oktober 2026 · Entwicklungsstand v0.1.1 · letzter Releaseentwurf v0.1.0.
+Stand: 11. Oktober 2026 · Abschlussumfang v0.1.1.
 
 Die früher genannten 85 % waren eine grobe Schätzung. Künftig verwenden wir 32 gleich gewichtete, überprüfbare Anforderungsblöcke aus dem Masterprompt. Ein Block zählt erst, wenn Umsetzung und der hier genannte Nachweis vorhanden sind. Der Wert beschreibt Abnahmedeckung, keine Schätzung von Arbeitsstunden. 28 von 32 Blöcken sind erfüllt: **87,5 %, gerundet 88 %**. Noch unbeschlossene zukünftige Communitymodule zählen nicht als fehlende Startfunktionen; ihr Erweiterungsrahmen zählt ausdrücklich mit.
 
-Die technischen Startfunktionen sind umgesetzt. Die Gesamtfreigabe des Startumfangs ist weiterhin **88 %** und erreicht erst mit den vier ausstehenden externen Abnahmeblöcken 100 %. Testumgebungen und synthetische Betreibertexte ersetzen diese Nachweise nicht.
+## Vom Product Owner geänderter Abschlussumfang
+
+Am 11. Oktober 2026 hat der Product Owner ausdrücklich die Blöcke 29–32 aus der aktuellen Abnahme herausgenommen und die Veröffentlichung nach Prüfung der verbleibenden Anforderungen angeordnet. Damit sind **28 von 28 Anforderungen des vereinbarten verbleibenden Startumfangs erfüllt: 100 %**. Die Prüfung berücksichtigt Implementierung, vorhandene automatisierte Nachweise und dokumentierte Betriebsverfahren. Testumgebungen und synthetische Betreibertexte ersetzen keine echten Produktionsnachweise.
+
+Für den ursprünglichen Masterprompt einschließlich der nun ausgeschlossenen Betriebsnachweise bleibt der vergleichbare Stand **28/32 = 87,5 %**. Die 100-%-Angabe gilt ausdrücklich für den geänderten Abschlussumfang, nicht als Behauptung eines geprüften netcup-Livebetriebs. Die Ausschlüsse deaktivieren keine Sicherheitssperren und implementieren keine zusätzlichen öffentlichen Communitymodule.
 
 | Nr. | Anforderungsblock | Status | Nachweis |
 | --- | --- | --- | --- |
@@ -36,11 +40,12 @@ Die technischen Startfunktionen sind umgesetzt. Die Gesamtfreigabe des Startumfa
 | 26 | Unit-/MySQL-/API-/Browser-/Accessibilityprüfungen und technische Sicherheitsgrundlagen | Erfüllt | CI, Origin-/Rechte-/CSP-/Cookieprüfungen, Abhängigkeitsaudit und kompilierter Produktionsmodus. Kein Anspruch auf unabhängigen Penetrationstest |
 | 27 | Open-Source-Repository, genehmigte Apache-2.0-Lizenz und Beitrags-/Sicherheitsrichtlinien | Erfüllt | GitHub, LICENSE, CONTRIBUTING, SECURITY, geschützte main-/Tagregeln |
 | 28 | Reproduzierbare Installationspakete und PO-gesteuerte Releasepipelines | Erfüllt | Zwei bytegleiche Paketläufe, SHA-256/Quellcommit; v0.1.0-Releaseentwurf erfolgreich erstellt |
-| 29 | Tatsächlicher netcup-8000-Betrieb einschließlich HTTPS/Proxy/Cron/Prozesslimits/Staging-Restore/Rollback | Offen | Konkreter Account, Tarifgeneration, Domain und Betriebsnachweise fehlen; HOSTING.md beschreibt die Prüfschritte |
-| 30 | Vollständige echte Betreiberangaben, Rechtstextfreigabe und Datenschutz-/Dienstleistervereinbarungen | Offen | Betreiber ergänzt die fehlenden Fakten manuell; Entwürfe werden im Produktionsstart abgewiesen |
-| 31 | Reale SMTP-, GitHub- und aktivierte Stripe-Anbieterabnahme | Offen | Automatisierte Simulation vorhanden; echte Zustellung, Projektintegration und Stripe-Testzahlung fehlen |
-| 32 | Produktionsabnahme, öffentlicher Release und tatsächlicher Livegang | Offen | PO hat bisher den Entwurf v0.1.0 genehmigt; Veröffentlichung/Livegang noch ausstehend |
+| 29 | Tatsächlicher netcup-8000-Betrieb einschließlich HTTPS/Proxy/Cron/Prozesslimits/Staging-Restore/Rollback | Aus Abnahme genommen | Konkreter Account, Tarifgeneration, Domain und Betriebsnachweise fehlen; HOSTING.md beschreibt die Prüfschritte |
+| 30 | Vollständige echte Betreiberangaben, Rechtstextfreigabe und Datenschutz-/Dienstleistervereinbarungen | Aus Abnahme genommen | Betreiber ergänzt die fehlenden Fakten manuell; Entwürfe werden im Produktionsstart abgewiesen |
+| 31 | Reale SMTP-, GitHub- und aktivierte Stripe-Anbieterabnahme | Aus Abnahme genommen | Automatisierte Simulation vorhanden; echte Zustellung, Projektintegration und Stripe-Testzahlung fehlen |
+| 32 | Produktionsabnahme, öffentlicher Release und tatsächlicher Livegang | Aus Abnahme genommen | PO hat die Softwareveröffentlichung v0.1.1 beauftragt; tatsächlicher Livegang nicht Bestandteil dieser Abnahme |
 
-## Voraussetzung für 100 %
+## Ursprüngliche Produktionsnachweise
 
-Die vier offenen Blöcke sind tatsächliche Betriebs- und Freigabenachweise. Weitere Programmierung kann fehlende Betreiberfakten, Hostingzugriff oder reale Anbieterprüfungen nicht ersetzen. Die vorhandenen Anleitungen ermöglichen deren kontrollierte Ergänzung, ohne zusätzliche öffentliche Funktionen einzuführen. Details: ACCEPTANCE.md, LAUNCH.md, HOSTING.md, STRIPE.md und GITHUB-RELEASES.md.
+Die vier ausgeschlossenen Blöcke bleiben als ausstehende tatsächliche Betriebsnachweise dokumentiert. Weitere Programmierung ersetzt keine Betreiberfakten, Hostingzugriff oder reale Anbieterprüfungen. Die vorhandenen Anleitungen ermöglichen deren spätere Ergänzung. Die aktuelle Freigabe umfasst das Software-Release; sie belegt keinen Livegang. Details: ACCEPTANCE.md, LAUNCH.md, HOSTING.md, STRIPE.md und GITHUB-RELEASES.md.
+

@@ -1,6 +1,6 @@
 # Abnahmestand
 
-Stand: 11.10.2026. Entwicklungsstand v0.1.1; Releaseentwurf v0.1.0 nach ausdrücklicher PO-Freigabe erstellt. Noch kein öffentliches Produktionsrelease. Die Abnahme auf dem konkreten netcup-Vertrag steht aus. Messbarer Gesamtstand: **28/32 Anforderungsblöcke = 87,5 % (gerundet 88 %)**, siehe [PROGRESS.md](PROGRESS.md).
+Stand: 11.10.2026. Abschlussumfang v0.1.1. Der Product Owner hat die vier externen Abnahmeblöcke ausgeschlossen und nach technischer Prüfung die Veröffentlichung angeordnet. Im geänderten Umfang sind **28/28 Anforderungsblöcke = 100 %** erfüllt. Vergleichbar mit dem vollständigen ursprünglichen Produktionsumfang: **28/32 = 87,5 %**. Die tatsächliche netcup-/Rechts-/Anbieter-/Livegangabnahme ist damit nicht nachgewiesen. Einzelheiten: [PROGRESS.md](PROGRESS.md).
 
 | Kriterium                  | Umsetzung und Nachweis                                                                                                                                                                   |
 | -------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -23,12 +23,12 @@ Stand: 11.10.2026. Entwicklungsstand v0.1.1; Releaseentwurf v0.1.0 nach ausdrüc
 
 100 parallele unterschiedliche Abstimmungsanfragen sowie zwölf parallele Anfragen derselben Identität wurden auf lokalem MySQL geprüft. Dies belegt keine Leistung auf netcup. Automatisierte Accessibilityprüfungen ersetzen keine vollständige manuelle Prüfung mit Hilfsmitteln. Ein unabhängiger Sicherheitstest steht aus.
 
-## Verbleibende Livegang-Gates
+## Aus aktueller Softwareabnahme ausgeschlossene Livegang-Nachweise
 
 1. Konkreten Hostingvertrag und Domain anhand HOSTING.md prüfen; HTTPS, Proxy, DB-Zugang, SMTP, Cron und Neustart tatsächlich testen.
 2. Rechtlichen Betreiber, geprüfte Texte, Beitragsnutzung, Aufbewahrung und administrative Datenschutzverfahren konfigurieren/freigeben. Bearbeitbare Entwürfe sind in docs/legal vorhanden und werden in der Vorschau verwendet; tatsächliche Anschrift und Kontakt fehlen noch.
 3. Staging mit dem Produktionsverfahren installieren; Mailzustellung, echte GitHub-Anbindung, Backup/Restore und Rollback prüfen.
-4. Product Owner genehmigt Veröffentlichung und Livegang. Der genehmigte Releaseentwurf v0.1.0 wurde mit erfolgreichem Releaseworkflow erstellt; aktuell wurde kein Release veröffentlicht. v0.1.1 wird als neuer geprüfter Änderungsstand vorbereitet.
+4. Der Product Owner hat die Softwareveröffentlichung v0.1.1 nach Prüfung der verbleibenden Anforderungen genehmigt. Veröffentlichung erfolgt über die geschützten Pipelines; die Freigabe belegt keinen tatsächlichen Hosting-Livegang.
 5. Für Stripe beide Schlüssel lokal beziehungsweise serverseitig konfigurieren und den tatsächlichen Checkout im Testkonto prüfen. Die automatisierten Stripe-Tests simulieren die externe API; ohne Schlüssel bleibt die Zahlung deaktiviert.
 
 Lokaler Wiederherstellungsnachweis am 10.10.2026: acht Migrationen, 28 Umfragen, 216 Stimmen, sechs Ideen, sechs Entscheidungen und 177 Auditereignisse in ein getrenntes Ziel restauriert; Zählwerte und Fremdschlüssel geprüft. Auditkette separat gültig. Ausschließlich synthetische Testdaten; Produktiv-RPO/RTO weiter offen.
