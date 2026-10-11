@@ -13,6 +13,8 @@ Eine modulare Webplattform für Community-Umfragen und nachvollziehbare Entschei
 - MySQL-Migrationen, Modulverwaltung, Datenschutzexport/-löschung, Rohdatenaufbewahrung und geprüfte Releaseentwürfe mit Prüfsummen.
 
 GitHub erstellt nach erfolgreichen Prüfungen das Artefakt `production-package`. Versionierte Releaseentwürfe und deren Veröffentlichung laufen über getrennte, durch den Product Owner freizugebende Workflows. Anleitung: [GitHub-Produktivpakete und Releases](docs/GITHUB-RELEASES.md).
+
+Versions- und Abnahmestand: [Fortschritt gegenüber dem Masterprompt](docs/PROGRESS.md). Vollständige technische Umsetzung ersetzt keine tatsächliche Hosting-, Anbieter- und Rechtsabnahme.
 - Responsive Oberfläche in Schwarz und Anthrazit mit transparenten Karten, lokal bereitgestellten Motion-Animationen und Ergebnisbalken in den Auswahlfeldern. Der Countdown erscheint nach der eigenen Abstimmung; Ergebnisregeln bleiben wirksam.
 
 ## Schnellstart

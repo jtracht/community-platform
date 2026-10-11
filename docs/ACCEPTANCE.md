@@ -1,6 +1,6 @@
 # Abnahmestand
 
-Stand: 11.10.2026. Ausführbares Startsystem; noch kein produktiv freigegebenes Release. Die Abnahme auf dem konkreten netcup-Vertrag steht aus.
+Stand: 11.10.2026. Entwicklungsstand v0.1.1; Releaseentwurf v0.1.0 nach ausdrücklicher PO-Freigabe erstellt. Noch kein öffentliches Produktionsrelease. Die Abnahme auf dem konkreten netcup-Vertrag steht aus. Messbarer Gesamtstand: **28/32 Anforderungsblöcke = 87,5 % (gerundet 88 %)**, siehe [PROGRESS.md](PROGRESS.md).
 
 | Kriterium                  | Umsetzung und Nachweis                                                                                                                                                                   |
 | -------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -17,7 +17,7 @@ Stand: 11.10.2026. Ausführbares Startsystem; noch kein produktiv freigegebenes 
 | Konten und Rechte          | Passwort/TOTP, Replay-Schutz, Sitzungen, granularer Zugriff, geschützte Owner-Rolle, Offline-Setup und Recovery                                                                          |
 | Module                     | Registrierte geprüfte Module, Manifest/Abhängigkeiten, Aktivierung/Deaktivierung, Health und Konfigurationsrollback; Codeupdates über kontrollierte Releases                             |
 | Öffentlicher Umfang        | Eine Hauptumfrage/Übergang und Pflichtinformationen; Projektinformation und ausklappbare Stripe-Unterstützung ausdrücklich vom Product Owner angefordert. Weitere Communitymodule bleiben ausgeschlossen |
-| Tests/Datenschutz          | 22 Unit-/MySQL-/API-/Lasttests und 12 Browser-/Accessibilitytests; responsive Prüfung von 320 bis 2560 Pixeln, Ergebnisfelder und Sichtbarkeitsregeln, Export/Löschung, Rechtstextausgabe mit Entwurfs-/Produktionssperre, Historien und Rohdatenaufbewahrung |
+| Tests/Datenschutz          | 25 Unit-/MySQL-/API-/Lasttests und 12 Browser-/Accessibilitytests; responsive Prüfung von 320 bis 2560 Pixeln, Ergebnisfelder und Sichtbarkeitsregeln, Export/Löschung, exakte Beitragsbedingungen je Stimme, Rechtstextausgabe mit Entwurfs-/Produktionssperre, Historien und Rohdatenaufbewahrung; zusätzlicher kompilierter Produktionsmodus und automatisierter Restore mit Auditvergleich |
 | Hostinginstallation        | Dokumentiert, konkrete Node-/MySQL-/WCP-/Cron-/SMTP-Konfiguration und Staging-Restore noch nachzuweisen                                                                                  |
 | Open Source                | Apache-2.0, Repository, Mitarbeit/Sicherheit, CI, Branch-/Tagregeln und Release-Reviewer vorhanden                                                                                       |
 
@@ -28,7 +28,7 @@ Stand: 11.10.2026. Ausführbares Startsystem; noch kein produktiv freigegebenes 
 1. Konkreten Hostingvertrag und Domain anhand HOSTING.md prüfen; HTTPS, Proxy, DB-Zugang, SMTP, Cron und Neustart tatsächlich testen.
 2. Rechtlichen Betreiber, geprüfte Texte, Beitragsnutzung, Aufbewahrung und administrative Datenschutzverfahren konfigurieren/freigeben. Bearbeitbare Entwürfe sind in docs/legal vorhanden und werden in der Vorschau verwendet; tatsächliche Anschrift und Kontakt fehlen noch.
 3. Staging mit dem Produktionsverfahren installieren; Mailzustellung, echte GitHub-Anbindung, Backup/Restore und Rollback prüfen.
-4. Product Owner genehmigt Release und Livegang. CI erzeugt geprüfte Releaseentwürfe; aktuell wurde kein Release veröffentlicht.
+4. Product Owner genehmigt Veröffentlichung und Livegang. Der genehmigte Releaseentwurf v0.1.0 wurde mit erfolgreichem Releaseworkflow erstellt; aktuell wurde kein Release veröffentlicht. v0.1.1 wird als neuer geprüfter Änderungsstand vorbereitet.
 5. Für Stripe beide Schlüssel lokal beziehungsweise serverseitig konfigurieren und den tatsächlichen Checkout im Testkonto prüfen. Die automatisierten Stripe-Tests simulieren die externe API; ohne Schlüssel bleibt die Zahlung deaktiviert.
 
 Lokaler Wiederherstellungsnachweis am 10.10.2026: acht Migrationen, 28 Umfragen, 216 Stimmen, sechs Ideen, sechs Entscheidungen und 177 Auditereignisse in ein getrenntes Ziel restauriert; Zählwerte und Fremdschlüssel geprüft. Auditkette separat gültig. Ausschließlich synthetische Testdaten; Produktiv-RPO/RTO weiter offen.

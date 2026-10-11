@@ -63,6 +63,11 @@ jobs:
       - run: npm run test:browser
       - run: npm audit --omit=dev --audit-level=high
       - run: npm run build
+      - name: Verify database backup and isolated restore
+        env:
+          TEST_MYSQL_CONTAINER: ${{ job.services.mysql.id }}
+          TEST_MYSQL_ROOT_PASSWORD: ci-root-only
+        run: node scripts/verify-local-restore.mjs
       - name: Package reproducible candidate
         run: |
           export RELEASE_COMMIT="$(git rev-parse HEAD)"
