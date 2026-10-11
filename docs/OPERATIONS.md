@@ -20,6 +20,8 @@ Geschützte GitHub-Umgebung release-approval mit erforderlichem Reviewer @jtrach
 
 Im Repository jtracht/community-platform sind main-Schutz (CI-Job `test`, ein Codeowner-Review, keine Force-Pushes/Löschung), Release-Reviewer @jtracht und v*-Tagregeln bereits eingerichtet. Repositoryadministratoren können die Regeln bewusst übersteuern; aktuell liegt diese Rolle beim Product Owner. Secret-Scanning, Push-Protection und Dependabot-Sicherheitsupdates wurden aktiviert. Aktionen sind auf geprüfte Commit-SHAs fixiert. Keine Deployment-Secrets wurden hinterlegt.
 
+CI und Release verwenden Ubuntu 24.04 sowie GitHub-Aktionen mit Node-24-Laufzeit, auf konkrete Commit-SHAs fixiert. Checkout-Zugangsdaten werden nicht für spätere Schritte gespeichert. Die CI lädt ihr Anwendungsartefakt mit derselben Download-Aktion wie der Releaseprozess erneut herunter und prüft Rechtstexte, Lizenz und `.env.example`; die private `.env` ist ausgeschlossen. Vor Erstellung des Releaseentwurfs werden die Paketprüfsummen erneut geprüft. Upgrades von Runnern und Aktionen erfolgen bewusst über geprüfte Pull Requests.
+
 Vor Update Wartungsfenster und DB-Backup. Neues Release separat installieren, Migrationen kontrollieren, WCP-App-Root umstellen und neu starten. Bei Fehler zum vorigen Verzeichnis wechseln. Bei inkompatibler Migration zusätzlich vorheriges DB-Backup wiederherstellen; seit Backup eingegangene Stimmen würden verloren gehen, daher während Migration Schreibzugriffe stoppen. Keine automatische irreversible Down-Migration.
 
 ## Backup und Restore
