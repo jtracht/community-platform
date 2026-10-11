@@ -48,4 +48,3 @@ Für den ursprünglichen Masterprompt einschließlich der nun ausgeschlossenen B
 ## Ursprüngliche Produktionsnachweise
 
 Die vier ausgeschlossenen Blöcke bleiben als ausstehende tatsächliche Betriebsnachweise dokumentiert. Weitere Programmierung ersetzt keine Betreiberfakten, Hostingzugriff oder reale Anbieterprüfungen. Die vorhandenen Anleitungen ermöglichen deren spätere Ergänzung. Die aktuelle Freigabe umfasst das Software-Release; sie belegt keinen Livegang. Details: ACCEPTANCE.md, LAUNCH.md, HOSTING.md, STRIPE.md und GITHUB-RELEASES.md.
-
