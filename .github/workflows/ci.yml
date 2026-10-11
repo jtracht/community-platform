@@ -44,6 +44,11 @@ jobs:
       - run: npx playwright install --with-deps chromium
       - run: npm run test:browser
       - run: npm run build
+      - name: Verify database backup and isolated restore
+        env:
+          TEST_MYSQL_CONTAINER: ${{ job.services.mysql.id }}
+          TEST_MYSQL_ROOT_PASSWORD: ci-root-only
+        run: node scripts/verify-local-restore.mjs
       - run: npm audit --omit=dev --audit-level=high
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:

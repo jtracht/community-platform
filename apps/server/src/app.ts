@@ -454,6 +454,7 @@ export async function buildApp(legal?: LegalContent) {
         req.cookies.participant_session
           ? digest(req.cookies.participant_session)
           : undefined,
+        legalContent.contributions,
       );
       return current(voter, (poll) =>
         identity(req, poll.id, poll.rules.participation),

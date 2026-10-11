@@ -2,7 +2,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
 import { readdir, readFile } from "node:fs/promises";
-import { assertProductionSessionSecret, inspectDatabase, readinessReport, type DatabaseReader } from "../apps/server/src/readiness.js";
+import { assertProductionConfiguration, assertProductionSessionSecret, inspectDatabase, readinessReport, type DatabaseReader } from "../apps/server/src/readiness.js";
 
 const configured = {
   NODE_ENV: "production", SITE_URL: "https://community.example.org",
@@ -51,4 +51,22 @@ test("Read-only database inspection detects missing or changed migrations and ab
   const error = await inspectDatabase(async () => { throw new Error("private-database-password"); });
   assert.equal(error[0]?.status, "blocker");
   assert.ok(!JSON.stringify(error).includes("private-database-password"));
+});
+
+test("Production startup enforces mandatory preflight configuration and never prints secrets", async () => {
+  await assert.doesNotReject(() => assertProductionConfiguration(configured));
+  for (const changed of [
+    { DEMO_MODE: "true" }, { RAW_VOTE_RETENTION_DAYS: "" },
+    { SITE_URL: "https://community.example.org/path" },
+    { DATABASE_URL: "mysql://app:development-only@db.example.org/community" },
+    { SITE_URL: "https://localhost" }, { LEGAL_REVIEWED: "false" },
+  ]) {
+    await assert.rejects(() => assertProductionConfiguration({ ...configured, ...changed }), (error: Error) => {
+      assert.match(error.message, /Produktionsstart blockiert/);
+      assert.ok(!error.message.includes(configured.SESSION_SECRET));
+      assert.ok(!error.message.includes(configured.DATABASE_URL));
+      assert.ok(!error.message.includes(configured.OPERATOR_EMAIL));
+      return true;
+    });
+  }
 });

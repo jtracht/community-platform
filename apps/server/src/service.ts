@@ -1,4 +1,5 @@
 import { randomUUID, createHmac, createHash } from "node:crypto";
+import { loadLegalContent } from "./legal-content.js";
 import {
   pool,
   rows,
@@ -161,6 +162,7 @@ export async function vote(
   answer: unknown,
   mode = "anonymous",
   sessionHash?: string,
+  contributionTerms?: string,
 ) {
   return transaction(async (c) => {
     const state = await lockState(c);
@@ -201,12 +203,17 @@ export async function vote(
     )
       throw new Error("Umfrage ist nicht aktiv.");
     const valid = validateAnswer(p.rules, answer);
-    if (p.rules.type === "text") {
-      const terms =
-        process.env.LEGAL_CONTRIBUTION_TERMS ?? "development-unreviewed";
+    const configuredTerms = p.rules.type === "text"
+      ? (contributionTerms ?? (await loadLegalContent()).contributions).trim()
+      : null;
+    if (configuredTerms === "" && process.env.NODE_ENV === "production")
+      throw new Error("Freigegebene Beitragsbedingungen fehlen.");
+    const terms = configuredTerms === "" ? "development-unreviewed" : configuredTerms;
+    const termsHash = terms === null ? null : createHash("sha256").update(terms).digest("hex");
+    if (terms !== null) {
       await c.execute(
         "INSERT IGNORE INTO legal_versions(hash,content) VALUES(?,?)",
-        [createHash("sha256").update(terms).digest("hex"), terms],
+        [termsHash, terms],
       );
     }
     const voteId = randomUUID();
@@ -217,14 +224,7 @@ export async function vote(
         id,
         voterHash(voter, id),
         JSON.stringify(valid),
-        p.rules.type === "text"
-          ? createHash("sha256")
-              .update(
-                process.env.LEGAL_CONTRIBUTION_TERMS ??
-                  "development-unreviewed",
-              )
-              .digest("hex")
-          : null,
+        termsHash,
       ],
     );
     if (p.rules.type === "text") {

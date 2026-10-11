@@ -22,7 +22,7 @@ Zwei Paketläufe müssen bytegleiche Archive erzeugen. Pakete aus Pull Requests 
 
 ## 3. Die geprüfte Version veröffentlichen
 
-Nach Betriebs- und Rechtsabnahme unter Actions **Publish approved production release** auswählen, den Tag angeben und den Lauf starten. Die geschützte Umgebung erfordert erneut die Product-Owner-Freigabe. Der Workflow prüft den vorhandenen Entwurf, Tag/Version/main-Historie, Quellcommit, Archivprüfsumme sowie identische Versionsnachweise im Archiv und als Releaseasset. Erst anschließend wird der Entwurf öffentlich als neueste Version veröffentlicht.
+Nach Product-Owner-Freigabe des jeweiligen Software-Abnahmeumfangs unter Actions **Publish approved production release** auswählen, den Tag angeben und den Lauf starten. Die geschützte Umgebung erfordert erneut die Product-Owner-Freigabe. Der Workflow prüft den vorhandenen Entwurf, Tag/Version/main-Historie, Quellcommit, Archivprüfsumme sowie identische Versionsnachweise im Archiv und als Releaseasset. Erst anschließend wird der Entwurf öffentlich als neueste Version veröffentlicht. Für v0.1.1 hat der Product Owner die vier externen Nachweisblöcke ausdrücklich von der Softwareabnahme ausgenommen; tatsächlicher Livebetrieb benötigt weiterhin die gültige Betreiber- und Produktionskonfiguration.
 
 Die manuell startbaren Workflows erscheinen erst nach Aufnahme ihrer Dateien in den Standardbranch. Sie veröffentlichen Releases; das Hochladen auf netcup und der Neustart der Anwendung folgen dem [Betriebshandbuch](OPERATIONS.md), bis Hostingpfade und Neustartverfahren konkret nachgewiesen sind. Es werden keine Produktionsdatenbankmigrationen automatisch ausgeführt.
 

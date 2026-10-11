@@ -1,6 +1,6 @@
 import { createHash } from "node:crypto";
 import { readFile, readdir } from "node:fs/promises";
-import { assertProductionLegalContent, loadLegalContent } from "./legal-content.js";
+import { assertProductionLegalContent, loadLegalContent, type LegalContent } from "./legal-content.js";
 
 export type ReadinessCheck = {
   id: string;
@@ -28,7 +28,7 @@ function databaseUrl(env: NodeJS.ProcessEnv) {
   } catch { return null; }
 }
 
-export async function configurationChecks(env: NodeJS.ProcessEnv = process.env, nodeVersion = process.versions.node) {
+export async function configurationChecks(env: NodeJS.ProcessEnv = process.env, nodeVersion = process.versions.node, legal?: LegalContent) {
   const checks: ReadinessCheck[] = [];
   const add = (id: string, ok: boolean, message: string, warning = false) =>
     checks.push({ id, status: ok ? "pass" : warning ? "warning" : "blocker", message });
@@ -47,7 +47,7 @@ export async function configurationChecks(env: NodeJS.ProcessEnv = process.env, 
   add("database-config", Boolean(databaseUrl(env)), "MySQL-Zugang mit eigenen Zugangsdaten konfigurieren.");
   add("database-tls", env.DATABASE_TLS === "true", "DB-Transportverschlüsselung aktivieren oder den abweichenden geschützten Transport beim Hoster nachweisen.", true);
   let legalReady = true;
-  try { assertProductionLegalContent(await loadLegalContent(env)); } catch { legalReady = false; }
+  try { assertProductionLegalContent(legal ?? await loadLegalContent(env)); } catch { legalReady = false; }
   add("legal", legalReady, "Betreiberangaben und endgültige Rechtstexte ergänzen, prüfen und freigeben.");
   add("demo", env.DEMO_MODE !== "true", "DEMO_MODE vor dem Produktivbetrieb entfernen.");
   const days = Number(env.RAW_VOTE_RETENTION_DAYS);
@@ -58,6 +58,13 @@ export async function configurationChecks(env: NodeJS.ProcessEnv = process.env, 
     /^pk_live_[a-zA-Z0-9]+$/.test(env.STRIPE_PUBLISHABLE_KEY ?? "");
   add("stripe", stripe, "Livezahlung benötigt passende Stripe-Live-Schlüssel und eine vorherige echte Testzahlung. Ohne Konfiguration bleibt Checkout deaktiviert.", true);
   return checks;
+}
+
+export async function assertProductionConfiguration(env: NodeJS.ProcessEnv = process.env, legal?: LegalContent) {
+  const blockers = (await configurationChecks(env, process.versions.node, legal))
+    .filter((check) => check.status === "blocker");
+  if (blockers.length)
+    throw new Error("Produktionsstart blockiert: " + blockers.map((check) => check.message).join(" "));
 }
 
 export type DatabaseReader = <T>(sql: string) => Promise<T[]>;

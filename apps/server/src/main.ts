@@ -1,20 +1,16 @@
 import { buildApp } from "./app.js";
 import { pool } from "../../../packages/database/index.js";
-import { assertProductionLegalContent, loadLegalContent } from "./legal-content.js";
-import { assertProductionSessionSecret } from "./readiness.js";
+import { loadLegalContent } from "./legal-content.js";
+import { assertProductionConfiguration } from "./readiness.js";
 if (
   !process.env.DATABASE_URL ||
   !process.env.SESSION_SECRET ||
   process.env.SESSION_SECRET.length < 32
 )
   throw new Error("DATABASE_URL und starkes SESSION_SECRET erforderlich.");
-const site = new URL(process.env.SITE_URL ?? "http://localhost:3000");
 const legal = await loadLegalContent();
 if (process.env.NODE_ENV === "production") {
-  assertProductionSessionSecret(process.env.SESSION_SECRET);
-  if (site.protocol !== "https:")
-    throw new Error("Produktionsstart blockiert: SITE_URL muss HTTPS verwenden.");
-  assertProductionLegalContent(legal);
+  await assertProductionConfiguration(process.env, legal);
 }
 const app = await buildApp(legal);
 await app.listen({

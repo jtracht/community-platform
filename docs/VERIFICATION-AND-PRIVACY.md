@@ -26,7 +26,9 @@ Export liefert zuordenbare Stimmen, Ideen, Bearbeitungshistorie, Einsprüche und
 
 Sicherheitsereignisse verwenden täglich wechselnde HMAC-Quellen statt Klartext-IP. Kritische Endpunkte besitzen zusätzlich gemeinsame DB-Ratenlimits; der allgemeine Limiter gilt je Prozess. Webserver-/Hostinglogs gesondert datensparsam konfigurieren. Alle registrierten Module sind geprüfter Anwendungscode. Aktivierungsrollback betrifft Konfiguration und freigegebene vorhandene Versionen; Code-Rollback folgt dem Releaseverfahren einschließlich Datenbankkompatibilität. Kein fremder Code wird nachgeladen. Auditkette regelmäßig prüfen und Endhash extern unveränderlich sichern.
 
-Lokaler Restoretest: TEST_MYSQL=true und `node scripts/verify-local-restore.mjs`; nur isolierte Docker-Testdatenbank community_test. Er erstellt ein getrenntes Restoreziel und prüft Datenzahlen und Fremdschlüssel. Dieser Test ist kein Hostingnachweis.
+Lokaler Restoretest: zuerst `npm run build`, danach TEST_MYSQL=true und `node scripts/verify-local-restore.mjs`; nur isolierte Docker-Testdatenbank community_test. Er erstellt ein getrenntes Restoreziel und prüft Datenzahlen, Fremdschlüssel und die vollständige Auditkette von Quelle und Ziel. Der Test läuft auch in CI und Release mit deren isoliertem MySQL-Service. TEST_MYSQL_CONTAINER wählt den Testcontainer; TEST_MYSQL_ROOT_PASSWORD überschreibt ausschließlich dessen Testzugang. Das Passwort wird über die Prozessumgebung weitergereicht, nicht als Befehlsargument. Dieser Test ist kein Hostingnachweis.
+
+Freitextstimmen speichern den Hash und die Fassung der tatsächlich angezeigten Beitragsbedingungen aus dem beim Start geladenen Rechtstextsnapshot. Das gilt auch für LEGAL_CONTRIBUTION_FILE und ersetzte Betreiberangaben. Eine Dateiänderung wird erst nach einem Neustart angezeigt und für neue Stimmen protokolliert; frühere Fassungen bleiben in legal_versions erhalten.
 
 ## Freiwillige Unterstützung über Stripe
 
