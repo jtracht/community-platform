@@ -25,7 +25,20 @@ test.beforeAll(async () => {
 test.afterAll(async () => {
   await pool.end();
 });
-test.beforeEach(async () => {
+test.beforeEach(async ({ request }, testInfo) => {
+  // The suite shares one server/IP. Pace independent scenarios within the
+  // production request limit rather than weakening it for automated tests.
+  const health = await request.get("/health");
+  expect([200, 429]).toContain(health.status());
+  const remaining = Number(health.headers()["x-ratelimit-remaining"]);
+  const reset = Number(health.headers()["x-ratelimit-reset"]);
+  expect(Number.isFinite(remaining) && remaining >= 0).toBe(true);
+  if (remaining < 40) {
+    expect(Number.isFinite(reset) && reset >= 0 && reset <= 60).toBe(true);
+    const waitMs = reset * 1000 + 200;
+    testInfo.setTimeout(testInfo.timeout + waitMs);
+    await new Promise(resolve => setTimeout(resolve, waitMs));
+  }
   for (const p of await rows<{ id: string }>(
     "SELECT id FROM polls WHERE status IN ('active','scheduled')",
   ))
