@@ -76,3 +76,10 @@ jobs:
           test -f "$ARTIFACT_DIR/docs/legal/datenschutz.txt"
           test -f "$ARTIFACT_DIR/docs/legal/beitraege.txt"
           test -f "$ARTIFACT_DIR/LICENSE"
+      - name: Install production dependencies in downloaded artifact
+        working-directory: ${{ runner.temp }}/application-verification
+        run: npm ci --omit=dev
+      - name: Smoke test compiled release without development dependencies
+        env:
+          ARTIFACT_DIR: ${{ runner.temp }}/application-verification
+        run: node scripts/verify-release.mjs "$ARTIFACT_DIR"

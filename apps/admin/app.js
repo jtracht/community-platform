@@ -1092,6 +1092,12 @@ function operationTools() {
   const box = el("section", undefined, "panel");
   box.append(el("h2", "Konfiguration und Hintergrundaufgaben"));
   if (extra.operations) {
+    if (extra.operations.readiness) {
+      box.append(el("h3", "Prüfung vor dem Livegang"));
+      for (const check of extra.operations.readiness.checks)
+        box.append(el("p", (check.status === "pass" ? "OK" : check.status === "blocker" ? "Offen" : "Hinweis") + " · " + check.message));
+      box.append(el("p", "Hosting, Anbieterzustellung und Wiederherstellung sind gesondert nachzuweisen. Diese Prüfung erteilt keine Produktionsfreigabe.", "hint"));
+    }
     for (const [key, value] of Object.entries(extra.operations.checks))
       box.append(el("p", key + ": " + value));
     box.append(el("p", "Aktive Adminsitzungen: " + extra.operations.sessions));

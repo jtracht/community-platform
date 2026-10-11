@@ -16,6 +16,8 @@ Rechtstexte können über `LEGAL_IMPRINT_FILE`, `LEGAL_PRIVACY_FILE` und `LEGAL_
 
 ## Updates und Rollback
 
+Vor dem Livegang die [manuelle Startfolge](LAUNCH.md) bearbeiten. `node --env-file=.env dist/scripts/preflight.js --database` prüft Konfiguration und Datenbank ausschließlich lesend; `--json` ist für Betriebsskripte vorgesehen. Dieselben Kriterien stehen im geschützten Admin-Bereich „Betrieb“. Ergebnisse geben keine Geheimnisse oder Betreiber-Kontaktdaten aus und ersetzen keine Hosting- oder Anbieterprüfung. Beispielwerte für SESSION_SECRET werden im Produktionsstart zusätzlich zur Längenprüfung abgewiesen.
+
 Geschützte GitHub-Umgebung release-approval mit erforderlichem Reviewer @jtracht konfigurieren, sofern Tarif dies unterstützt. Bei nur einem Product Owner muss dieser eigene Tag-Läufe freigeben können; mit einem größeren Reviewteam Selbstfreigaben ausschließen. Tag-Regeln: nur Product Owner darf v*-Tags erstellen, main mit PR, Codeowner-Review und Quality-CI schützen. CI erstellt nur Releaseentwürfe. Automatisches Produktionsdeployment ist noch nicht eingerichtet, solange Hostingpfade und Neustartverfahren nicht verifiziert sind. Manuelles SFTP/SSH-Deployment ist der dokumentierte Startweg.
 
 Im Repository jtracht/community-platform sind main-Schutz (CI-Job `test`, ein Codeowner-Review, keine Force-Pushes/Löschung), Release-Reviewer @jtracht und v*-Tagregeln bereits eingerichtet. Repositoryadministratoren können die Regeln bewusst übersteuern; aktuell liegt diese Rolle beim Product Owner. Secret-Scanning, Push-Protection und Dependabot-Sicherheitsupdates wurden aktiviert. Aktionen sind auf geprüfte Commit-SHAs fixiert. Keine Deployment-Secrets wurden hinterlegt.

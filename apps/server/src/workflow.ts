@@ -1,4 +1,5 @@
 import type { FastifyInstance } from "fastify";
+import { readinessReport } from "./readiness.js";
 import { randomUUID } from "node:crypto";
 import { z } from "zod";
 import {
@@ -674,6 +675,7 @@ export async function workflowRoutes(app: FastifyInstance) {
     return { ok: true };
   });
   app.get("/api/admin/operations", async () => ({
+    readiness: await readinessReport(process.env, rows),
     security: await rows(
       "SELECT id,status,path,created_at FROM security_events ORDER BY created_at DESC LIMIT 100",
     ),

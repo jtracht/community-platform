@@ -17,7 +17,7 @@ Stand: 11.10.2026. Ausführbares Startsystem; noch kein produktiv freigegebenes 
 | Konten und Rechte          | Passwort/TOTP, Replay-Schutz, Sitzungen, granularer Zugriff, geschützte Owner-Rolle, Offline-Setup und Recovery                                                                          |
 | Module                     | Registrierte geprüfte Module, Manifest/Abhängigkeiten, Aktivierung/Deaktivierung, Health und Konfigurationsrollback; Codeupdates über kontrollierte Releases                             |
 | Öffentlicher Umfang        | Eine Hauptumfrage/Übergang und Pflichtinformationen; Projektinformation und ausklappbare Stripe-Unterstützung ausdrücklich vom Product Owner angefordert. Weitere Communitymodule bleiben ausgeschlossen |
-| Tests/Datenschutz          | 20 Unit-/MySQL-/API-/Lasttests und 12 Browser-/Accessibilitytests; responsive Prüfung von 320 bis 2560 Pixeln, Ergebnisfelder und Sichtbarkeitsregeln, Export/Löschung, Rechtstextausgabe mit Entwurfs-/Produktionssperre, Historien und Rohdatenaufbewahrung |
+| Tests/Datenschutz          | 22 Unit-/MySQL-/API-/Lasttests und 12 Browser-/Accessibilitytests; responsive Prüfung von 320 bis 2560 Pixeln, Ergebnisfelder und Sichtbarkeitsregeln, Export/Löschung, Rechtstextausgabe mit Entwurfs-/Produktionssperre, Historien und Rohdatenaufbewahrung |
 | Hostinginstallation        | Dokumentiert, konkrete Node-/MySQL-/WCP-/Cron-/SMTP-Konfiguration und Staging-Restore noch nachzuweisen                                                                                  |
 | Open Source                | Apache-2.0, Repository, Mitarbeit/Sicherheit, CI, Branch-/Tagregeln und Release-Reviewer vorhanden                                                                                       |
 

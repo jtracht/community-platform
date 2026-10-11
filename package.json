@@ -12,6 +12,7 @@
     "dev": "tsx watch apps/server/src/main.ts",
     "build": "tsc && node scripts/build-assets.mjs",
     "start": "node --env-file=.env dist/apps/server/src/main.js",
+    "preflight": "node --env-file=.env dist/scripts/preflight.js",
     "test": "tsx --test --test-concurrency=1 tests/*.test.ts",
     "test:browser": "playwright test",
     "check": "tsc --noEmit",

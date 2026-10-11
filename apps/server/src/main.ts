@@ -1,6 +1,7 @@
 import { buildApp } from "./app.js";
 import { pool } from "../../../packages/database/index.js";
 import { assertProductionLegalContent, loadLegalContent } from "./legal-content.js";
+import { assertProductionSessionSecret } from "./readiness.js";
 if (
   !process.env.DATABASE_URL ||
   !process.env.SESSION_SECRET ||
@@ -10,6 +11,7 @@ if (
 const site = new URL(process.env.SITE_URL ?? "http://localhost:3000");
 const legal = await loadLegalContent();
 if (process.env.NODE_ENV === "production") {
+  assertProductionSessionSecret(process.env.SESSION_SECRET);
   if (site.protocol !== "https:")
     throw new Error("Produktionsstart blockiert: SITE_URL muss HTTPS verwenden.");
   assertProductionLegalContent(legal);
