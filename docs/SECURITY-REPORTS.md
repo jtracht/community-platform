@@ -1,0 +1,13 @@
+# Sicherheitsberichte und Prüfprotokolle
+
+Ab Version 0.1.2 bietet der geschützte Admin-Bereich „Sicherheit“ zeitbezogene Berichte, manuelle Prüfprotokolle, Folgeprüfungen und JSON-Export. Ausschließlich operations.manage ist berechtigt; dieses Recht bleibt dem Product Owner vorbehalten. Es entsteht kein zusätzlicher öffentlicher Produktbereich.
+
+Ein Bericht erfasst ein unveränderliches Abbild: Anwendungsversion, Zeitpunkt, ausgewähltes Zeitfenster von 1/7/14 Tagen, nach HTTP-Status aggregierte Sicherheitsereignisse, technische Vorabprüfung und Auditkettenstatus. Quell-HMACs, IP-Adressen, Passwörter, Sitzungstoken und Anbieterzugänge werden nicht aufgenommen. Ereignisse stammen aus den bereits gespeicherten 401-/403-/429-Fehlern; sie sind keine vollständige Angriffserkennung.
+
+Die Auditprüfung berücksichtigt höchstens 5000 Ereignisse. Größere Ketten werden ausdrücklich als nicht geprüft gekennzeichnet und erfordern dist/scripts/verify-audit.js. Ein konsistenter gespeicherter Endhash ersetzt keinen extern unveränderlich gesicherten Vergleich und keinen unabhängigen Sicherheitstest. Bericht und Auditanker zeigen den Zeitpunkt vor dem protokollierten Erstellen des Berichts.
+
+Manuelle Prüfungen enthalten Bereich, Titel, Verantwortlichen, Ergebnis und begründete Notiz. Ergebnisse heißen bestanden, prüfen oder fehlgeschlagen. Prüfungen und Berichte lassen sich über die Anwendung nicht überschreiben oder löschen. Korrekturen und erneute Prüfungen entstehen als verknüpfte Folgeeinträge; zu jedem Eintrag ist höchstens eine direkte Folgeprüfung zulässig. Parallele Folgeprüfungen werden serialisiert und eindeutig abgesichert. Alte Angaben bleiben in der Historie erhalten.
+
+Der JSON-Export enthält Bericht und vollständige Prüfchronik. Er ist ausschließlich geschützt erreichbar und wird auditiert. Freitextnotizen dürfen keine Zugangsdaten, personenbezogenen Abstimmungsinhalte oder unnötigen privaten Informationen enthalten. Berichte und Prüfnotizen sind administrative Nachweise; hierfür muss der Betreiber eine gesonderte angemessene Aufbewahrung definieren. Die automatische 14-Tage-Löschung von Sicherheitsereignissen löscht keine Berichtsabbilder. Löschung bei berechtigtem Bedarf erfolgt kontrolliert im dokumentierten administrativen Datenbankverfahren, einschließlich gesetzlicher Aufbewahrung und Auditnachweis.
+
+Migration 009_security_reports.sql ist vor Verwendung anzuwenden. Vor Migration sichern. Ein Rollback auf 0.1.1 kann die zusätzlichen Tabellen ungenutzt bestehen lassen; es gibt keine automatische Down-Migration oder Datenlöschung. Tatsächliche Hosting-/Anbieter-/Rechtsnachweise bleiben gemäß vereinbartem Abschlussumfang separat.

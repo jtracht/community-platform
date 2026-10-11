@@ -1,6 +1,10 @@
 # Fortschritt gegenüber dem Masterprompt
 
-Stand: 11. Oktober 2026 · Abschlussumfang v0.1.1.
+Stand: 11. Oktober 2026 · Entwicklungsstand v0.1.2; veröffentlicht ist v0.1.1.
+
+## Neue freigegebene Admin-Erweiterung
+
+Der Product Owner hat Sicherheitsberichte und Prüfprotokolle als nächste Funktion beauftragt. Dieser zusätzliche Block ist umgesetzt: geschützte Momentaufnahmen, manuelle Prüfungen mit Verantwortlichen, unverändert erhaltene Originaleinträge, serialisierte Folgeprüfungen und auditierter JSON-Export. Nachweis: SECURITY-REPORTS.md, Migration 009, zwei zusätzliche Fach-/API-Tests und ein zusätzlicher Browser-/Accessibilitytest. Insgesamt bestehen 27 Fach-/MySQL-/API-Tests und 13 Browserprüfungen. Damit ist der aktuell vereinbarte Entwicklungsumfang **29/29 = 100 %**; die neue Version ist zur GitHub-Prüfung vorbereitet, noch nicht veröffentlicht. Die historische Abdeckung des ursprünglichen Masterprompts bleibt 28/32 = 87,5 %; die Erweiterung ist kein Ersatz für ausgeschlossene Betriebsnachweise.
 
 Die früher genannten 85 % waren eine grobe Schätzung. Künftig verwenden wir 32 gleich gewichtete, überprüfbare Anforderungsblöcke aus dem Masterprompt. Ein Block zählt erst, wenn Umsetzung und der hier genannte Nachweis vorhanden sind. Der Wert beschreibt Abnahmedeckung, keine Schätzung von Arbeitsstunden. 28 von 32 Blöcken sind erfüllt: **87,5 %, gerundet 88 %**. Noch unbeschlossene zukünftige Communitymodule zählen nicht als fehlende Startfunktionen; ihr Erweiterungsrahmen zählt ausdrücklich mit.
 
@@ -14,7 +18,7 @@ Für den ursprünglichen Masterprompt einschließlich der nun ausgeschlossenen B
 | --- | --- | --- | --- |
 | 1 | Modularer TypeScript-/Node-Monolith, getrennte öffentliche/admin/API-Bereiche | Erfüllt | ARCHITECTURE.md; apps und packages; strenge TypeScript-Prüfung |
 | 2 | Typisierte MySQL-Datenhaltung und klare Paketgrenzen | Erfüllt | packages/database, packages/polls; parametrisiertes SQL |
-| 3 | Migrationen, Fremdschlüssel, Indizes und InnoDB-Transaktionen | Erfüllt | Acht SQL-Migrationen; MySQL-Integration und Migrationsprüfsummen |
+| 3 | Migrationen, Fremdschlüssel, Indizes und InnoDB-Transaktionen | Erfüllt | Neun SQL-Migrationen; MySQL-Integration und Migrationsprüfsummen |
 | 4 | Höchstens eine aktive offizielle Hauptumfrage | Erfüllt | Singleton-Sperre; Integration und Parallelitätstests |
 | 5 | Entwurf, Terminierung, Start/Ende, Pause und Übergänge | Erfüllt | service.ts, Administration; API- und Phasentests |
 | 6 | Freitext, Single-/Multiple-Choice und Ranking | Erfüllt | Fachtests sowie Browserprüfungen |
