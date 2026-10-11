@@ -1,9 +1,27 @@
 import { spawn, spawnSync } from "node:child_process";
-import { resolve } from "node:path";
+import { resolve, join } from "node:path";
+import { mkdtemp, unlink, rmdir } from "node:fs/promises";
+import { tmpdir } from "node:os";
 import { randomBytes } from "node:crypto";
 import assert from "node:assert/strict";
 
 const root = resolve(process.argv[2] ?? ".");
+const acceptanceDir = await mkdtemp(join(tmpdir(), "community-acceptance-"));
+const acceptanceFile = join(acceptanceDir, "acceptance.json");
+try {
+  const command = ["dist/scripts/launch-acceptance.js", "--template", acceptanceFile];
+  const template = spawnSync(process.execPath, command, { cwd: root, encoding: "utf8", timeout: 10000 });
+  assert.equal(template.status, 0);
+  const overwrite = spawnSync(process.execPath, command, { cwd: root, encoding: "utf8", timeout: 10000 });
+  assert.equal(overwrite.status, 2);
+  const check = spawnSync(process.execPath, ["dist/scripts/launch-acceptance.js", "--check", acceptanceFile], { cwd: root, encoding: "utf8", timeout: 10000 });
+  assert.equal(check.status, 1);
+  assert.equal(JSON.parse(check.stdout).documentationComplete, false);
+  assert.equal(JSON.parse(check.stdout).total, 16);
+} finally {
+  await unlink(acceptanceFile).catch(() => {});
+  await rmdir(acceptanceDir);
+}
 const env = {
   ...process.env, NODE_ENV: "development", TEST_MYSQL: "false", HOST: "127.0.0.1", PORT: "0",
   SITE_URL: "http://localhost", SESSION_SECRET: randomBytes(32).toString("hex"),

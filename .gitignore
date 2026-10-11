@@ -5,6 +5,7 @@ dist/
 !.env.example
 coverage/
 backups/
+private-acceptance/
 *.log
 playwright-report/
 test-results/
