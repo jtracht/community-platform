@@ -7,6 +7,7 @@ let dashboard,
 let extra = { steps: [], evaluations: [], dependencies: [], appeals: [] },
   moduleHealth = { manifests: [], health: [], history: [] },
   users = null;
+let securityData = null, selectedSecurityReport = null, securityPage = 0;
 const selectedIdeas = new Set();
 let loggedOut = false,
   viewRevision = 0;
@@ -40,6 +41,7 @@ function field(form, name, label, type = "text", value = "", choices = []) {
     type === "textarea" ? "textarea" : type === "select" ? "select" : "input",
   );
   input.name = name;
+  input.setAttribute("aria-label", label);
   if (type !== "textarea" && type !== "select") input.type = type;
   for (const [v, text] of choices) {
     const option = el("option", text);
@@ -76,11 +78,18 @@ async function reload() {
     extra = { ...(await api("workflow")), operations: await api("operations") };
   else if (allowed("ideas.read")) extra.appeals = await api("appeals");
   if (allowed("modules.read")) moduleHealth = await api("modules/health");
+  if (tab === "Sicherheit" && allowed("operations.manage")) {
+    securityData = await api("security/reports?page=" + securityPage);
+    if (selectedSecurityReport) selectedSecurityReport = await api("security/reports/" + selectedSecurityReport.id);
+  }
   if (loggedOut || revision !== viewRevision) return;
   document.querySelector("#logout").hidden = false;
   draw();
 }
 function login() {
+  tab = "Dashboard";
+  securityData = null;
+  selectedSecurityReport = null;
   loggedOut = true;
   viewRevision++;
   nav.replaceChildren();
@@ -130,6 +139,7 @@ function draw() {
     "Entwicklung",
     "Module",
     "Betrieb",
+    "Sicherheit",
     "Benutzer",
   ]) {
     const permission = {
@@ -139,12 +149,14 @@ function draw() {
       Entwicklung: "planning.read",
       Module: "modules.read",
       Betrieb: "operations.manage",
+      Sicherheit: "operations.manage",
       Benutzer: "users.manage",
     }[name];
     if (permission && !allowed(permission)) continue;
-    const b = action(name, () => {
+    const b = action(name, async () => {
       tab = name;
-      draw();
+      if (name === "Sicherheit") await reload();
+      else draw();
     });
     if (tab === name) b.setAttribute("aria-current", "page");
     nav.append(b);
@@ -200,6 +212,7 @@ function draw() {
     githubSettings();
   }
   if (tab === "Benutzer") userManagement();
+  if (tab === "Sicherheit" && allowed("operations.manage")) securityTools();
 }
 function polls() {
   for (const p of dashboard.polls) {
@@ -1087,6 +1100,65 @@ function moduleTools() {
         }),
       );
   }
+}
+function securityTools() {
+  if (!securityData) return;
+  const box = el("section", undefined, "panel");
+  box.append(el("h2", "Sicherheitsberichte"), el("p", "Zeitbezogene Nachweise und Prüfchronik. Ein Bericht ist keine Sicherheits- oder Produktionsfreigabe.", "hint"));
+  const create = el("form");
+  field(create, "days", "Berichtszeitraum", "select", "7", [["1", "Letzte 24 Stunden"], ["7", "Letzte 7 Tage"], ["14", "Letzte 14 Tage"]]);
+  box.append(submitForm(create, "Sicherheitsbericht erstellen", async (data) => {
+    const result = await api("security/reports", "POST", { days: Number(data.get("days")), confirmed: true });
+    selectedSecurityReport = await api("security/reports/" + result.id);
+    securityPage = 0;
+  }));
+  box.append(el("p", securityData.total + " gespeicherte Berichte"));
+  for (const report of securityData.reports) box.append(action(
+    report.snapshot.capturedAt + " · v" + report.snapshot.applicationVersion + " · " + report.snapshot.days + " Tage",
+    async () => { selectedSecurityReport = await api("security/reports/" + report.id); if (!loggedOut) draw(); },
+  ));
+  if (securityPage > 0) box.append(action("Neuere Berichte", async () => { securityPage--; await reload(); }));
+  if ((securityPage + 1) * 25 < securityData.total) box.append(action("Ältere Berichte", async () => { securityPage++; await reload(); }));
+  content.append(box);
+  if (!selectedSecurityReport) return;
+  const report = selectedSecurityReport;
+  const detail = el("section", undefined, "panel");
+  detail.append(el("h2", "Bericht und Prüfchronik"), el("p", report.snapshot.capturedAt + " · Version " + report.snapshot.applicationVersion));
+  detail.append(el("h3", "Sicherheitsereignisse"));
+  if (!report.snapshot.events.length) detail.append(el("p", "Keine gespeicherten Ereignisse im gewählten Zeitraum."));
+  for (const event of report.snapshot.events) detail.append(el("p", "HTTP " + event.status + " · " + event.total + " Ereignisse"));
+  detail.append(el("h3", "Auditkette"), el("p", ({ valid: "Konsistent", invalid: "Nicht konsistent", not_checked: "Nicht vollständig geprüft" })[report.snapshot.audit.status]), el("p", report.snapshot.audit.message, "hint"));
+  detail.append(el("h3", "Technische Prüfungen zum Berichtszeitpunkt"));
+  for (const check of report.snapshot.readiness.checks) detail.append(el("p", ({ pass: "OK", blocker: "Offen", warning: "Hinweis" })[check.status] + " · " + check.message));
+  const download = el("a", "Bericht als JSON exportieren");
+  download.href = "/api/admin/security/reports/" + report.id + "/export";
+  download.download = "security-report-" + report.id + ".json";
+  detail.append(download);
+  const topicNames = { authentication: "Anmeldung", permissions: "Berechtigungen", privacy: "Datenschutz", dependencies: "Abhängigkeiten", backup: "Datensicherung", configuration: "Konfiguration", other: "Weitere Prüfung" };
+  const outcomes = { passed: "Bestanden", attention: "Prüfen", failed: "Fehlgeschlagen" };
+  const person = (id) => securityData.assignees.find(a => a.id === id)?.email || id;
+  detail.append(el("h3", "Dokumentierte Prüfungen"));
+  for (const review of report.reviews) {
+    const entry = el("article", undefined, "panel");
+    entry.append(el("h4", review.title), el("p", topicNames[review.topic] + " · " + outcomes[review.outcome] + (review.superseded ? " · mit Folgeprüfung" : "")),
+      el("p", "Verantwortlich: " + person(review.assigned_to)), el("p", review.notes), el("p", review.created_at + " UTC · Prüfer: " + person(review.created_by)));
+    if (review.supersedes_id) entry.append(el("p", "Folgeprüfung zu " + review.supersedes_id, "hint"));
+    detail.append(entry);
+  }
+  const form = el("form");
+  form.append(el("h3", "Prüfung protokollieren"), el("p", "Keine Zugangsdaten oder unnötigen privaten Informationen eintragen. Vorhandene Einträge bleiben erhalten.", "hint"));
+  const title = field(form, "title", "Prüftitel"); title.maxLength = 160; title.minLength = 3;
+  field(form, "topic", "Prüfbereich", "select", "authentication", Object.entries(topicNames));
+  field(form, "assignedTo", "Verantwortliche Person", "select", dashboard.admin.id, securityData.assignees.map(a => [a.id, a.email]));
+  field(form, "outcome", "Prüfergebnis", "select", "attention", Object.entries(outcomes));
+  const notes = field(form, "notes", "Begründung und Nachweis", "textarea"); notes.maxLength = 2000; notes.minLength = 3;
+  field(form, "supersedesId", "Bezug zur bisherigen Prüfung", "select", "", [["", "Neue eigenständige Prüfung"], ...report.reviews.filter(r => !r.superseded).map(r => [r.id, "Folgeprüfung: " + r.title])]).required = false;
+  const confirmed = field(form, "confirmed", "Prüfergebnis ausdrücklich bestätigen", "checkbox");
+  detail.append(submitForm(form, "Prüfprotokoll speichern", (data) => api("security/reports/" + report.id + "/reviews", "POST", {
+    title: data.get("title"), topic: data.get("topic"), assignedTo: data.get("assignedTo"), outcome: data.get("outcome"),
+    notes: data.get("notes"), supersedesId: data.get("supersedesId") || null, confirmed: confirmed.checked,
+  })));
+  content.append(detail);
 }
 function operationTools() {
   const box = el("section", undefined, "panel");

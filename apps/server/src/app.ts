@@ -36,6 +36,7 @@ import { githubManagementRoutes } from "./github.js";
 import { sharedLimit } from "./limits.js";
 import { legalRoutes } from "./legal.js";
 import { supportRoutes } from "./support.js";
+import { securityReportRoutes } from "./security-reports.js";
 import { loadLegalContent, type LegalContent } from "./legal-content.js";
 type Admin = {
   id: string;
@@ -691,6 +692,7 @@ export async function buildApp(legal?: LegalContent) {
   await githubRoutes(app);
   await participationRoutes(app);
   await workflowRoutes(app);
+  await securityReportRoutes(app);
   await githubManagementRoutes(app);
   await legalRoutes(app, legalContent);
   await supportRoutes(app);

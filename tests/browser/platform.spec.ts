@@ -252,6 +252,51 @@ test("Product Owner can prepare, edit and schedule a survey and pause participat
   ).toBeVisible();
 });
 
+test("Owner records security evidence, follows up without overwriting and exports accessible report", async ({ page }) => {
+  const id = randomUUID(), email = id + "@example.invalid";
+  const secret = new OTPAuth.Secret({ size: 20 });
+  const password = "browser-security-password-long";
+  await pool.execute("INSERT INTO admins(id,email,password_hash,totp_secret,role) VALUES(?,?,?,?,?)",
+    [id, email, hashPassword(password), encrypt(secret.base32), "owner"]);
+  await page.goto("/admin");
+  await page.getByRole("textbox", { name: "E-Mail" }).fill(email);
+  await page.getByLabel("Passwort", { exact: true }).fill(password);
+  await page.getByRole("textbox", { name: "Zwei-Faktor-Code" }).fill(new OTPAuth.TOTP({ secret }).generate());
+  await page.getByRole("button", { name: "Anmelden", exact: true }).click();
+  await page.getByRole("button", { name: "Sicherheit", exact: true }).click();
+  await page.getByRole("button", { name: "Sicherheitsbericht erstellen" }).click();
+  await expect(page.getByRole("heading", { name: "Bericht und Prüfchronik" })).toBeVisible();
+  const title = "Berechtigungen " + id.slice(0, 8);
+  await page.getByLabel("Prüftitel", { exact: true }).fill(title);
+  await page.getByLabel("Prüfbereich", { exact: true }).selectOption("permissions");
+  await page.getByLabel("Prüfergebnis", { exact: true }).selectOption("failed");
+  await page.getByLabel("Begründung und Nachweis", { exact: true }).fill("<script>Nur Text, kein Programmcode</script>");
+  await page.getByRole("checkbox", { name: "Prüfergebnis ausdrücklich bestätigen" }).check();
+  await page.getByRole("button", { name: "Prüfprotokoll speichern" }).click();
+  await expect(page.getByRole("heading", { name: title, exact: true })).toBeVisible();
+  await page.getByLabel("Prüftitel", { exact: true }).fill("Nachprüfung " + id.slice(0, 8));
+  await page.getByLabel("Prüfergebnis", { exact: true }).selectOption("passed");
+  await page.getByLabel("Begründung und Nachweis", { exact: true }).fill("Berechtigungen nach Korrektur erneut geprüft.");
+  await page.getByLabel("Bezug zur bisherigen Prüfung", { exact: true }).selectOption({ label: "Folgeprüfung: " + title });
+  await page.getByRole("checkbox", { name: "Prüfergebnis ausdrücklich bestätigen" }).check();
+  await page.getByRole("button", { name: "Prüfprotokoll speichern" }).click();
+  const original = page.locator("article").filter({ has: page.getByRole("heading", { name: title, exact: true }) });
+  await expect(original).toContainText("Fehlgeschlagen · mit Folgeprüfung");
+  await expect(original).toContainText("<script>Nur Text, kein Programmcode</script>");
+  const downloadPromise = page.waitForEvent("download");
+  await page.getByRole("link", { name: "Bericht als JSON exportieren" }).click();
+  const download = await downloadPromise;
+  expect(download.suggestedFilename()).toMatch(/^security-report-.*\.json$/);
+  const stream = await download.createReadStream();
+  const chunks = [];
+  for await (const chunk of stream!) chunks.push(chunk);
+  const exported = JSON.parse(Buffer.concat(chunks).toString("utf8"));
+  expect(exported.reviews).toHaveLength(2);
+  expect(exported.snapshot.days).toBe(7);
+  expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
+  await page.getByRole("button", { name: "Abmelden", exact: true }).click();
+});
+
 for (const mode of ["email", "account"] as const)
   test(`Verified ${mode} participation stays inside the survey`, async ({
     page,

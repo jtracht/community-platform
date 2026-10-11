@@ -1,5 +1,7 @@
 # Abnahmestand
 
+Erweiterung v0.1.2: Sicherheitsberichte und Prüfchroniken sind implementiert und lokal geprüft; die Softwareveröffentlichung steht noch aus. Der erweiterte vereinbarte Entwicklungsumfang beträgt 29/29 = 100 %. Die neue private Administration ist nur für den Product Owner zugänglich, speichert feste Momentaufnahmen und erhält Originalprüfungen bei Folgeprüfungen. Zwei zusätzliche Fach-/API-Prüfungen und eine Browser-/Accessibilityprüfung belegen Rechte, parallele Folgeprüfungen, Snapshot-Erhalt und auditierten Export. Insgesamt 27 Fach-/MySQL-/API-Tests und 13 Browserprüfungen bestanden. Details: [SECURITY-REPORTS.md](SECURITY-REPORTS.md).
+
 Stand: 11.10.2026. Abschlussumfang v0.1.1. Der Product Owner hat die vier externen Abnahmeblöcke ausgeschlossen und nach technischer Prüfung die Veröffentlichung angeordnet. Im geänderten Umfang sind **28/28 Anforderungsblöcke = 100 %** erfüllt. Vergleichbar mit dem vollständigen ursprünglichen Produktionsumfang: **28/32 = 87,5 %**. Die tatsächliche netcup-/Rechts-/Anbieter-/Livegangabnahme ist damit nicht nachgewiesen. Einzelheiten: [PROGRESS.md](PROGRESS.md).
 
 | Kriterium                  | Umsetzung und Nachweis                                                                                                                                                                   |
