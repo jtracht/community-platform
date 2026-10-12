@@ -38,6 +38,7 @@ import { legalRoutes } from "./legal.js";
 import { supportRoutes } from "./support.js";
 import { securityReportRoutes } from "./security-reports.js";
 import { setupRoutes } from "./setup.js";
+import { searchRoutes } from "./seo.js";
 import { loadLegalContent, type LegalContent } from "./legal-content.js";
 type Admin = {
   id: string;
@@ -237,11 +238,6 @@ export async function buildApp(legal?: LegalContent) {
     await rows("SELECT 1");
     return { status: "ok" };
   });
-  app.get("/robots.txt", async (_, reply) =>
-    reply
-      .type("text/plain")
-      .send("User-agent: *\nDisallow: /admin\nDisallow: /api/\n"),
-  );
   app.get("/api/privacy/export", async (req, reply) => {
     const entries = [];
     const session = req.cookies.participant_session
@@ -695,6 +691,7 @@ export async function buildApp(legal?: LegalContent) {
   await workflowRoutes(app);
   await securityReportRoutes(app);
   await setupRoutes(app);
+  await searchRoutes(app, legalContent);
   await githubManagementRoutes(app);
   await legalRoutes(app, legalContent);
   await supportRoutes(app);
