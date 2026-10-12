@@ -1,6 +1,10 @@
 # Fortschritt gegenüber dem Masterprompt
 
-Stand: 12. Oktober 2026 · Entwicklungsstand v0.1.4; veröffentlicht ist v0.1.3.
+Stand: 12. Oktober 2026 · Entwicklungsstand v0.1.5; veröffentlicht ist v0.1.4.
+
+## Technische Suchoptimierung ohne sichtbare Änderungen
+
+Zusätzlich beauftragte Optimierung: Canonicals, wahrheitsgemäße JSON-LD-Seiten-/Website-Metadaten, Vorschau-Metadaten, Sitemap, freigegebener Suchcrawlerzugang und Ausschluss privater/ungeprüfter Umgebungen. Sichtbare Body-Bytes, Texte, Titel, Design und Funktionen bleiben unverändert. Nachweis: SEARCH-OPTIMIZATION.md und zwei zusätzliche Metadaten-/HTTP-Tests; insgesamt 32 Fach-/API-/MySQL-Tests und 14 Browserprüfungen. **32/32 = 100 %** des vereinbarten Entwicklungsumfangs. Tatsächliche Indexierung/KI-Zitierungen erfordern Livebetrieb und externe Prüfung; ursprünglicher Masterprompt mit offenen Betriebsnachweisen weiterhin 28/32 = 87,5 %.
 
 ## Einrichtungseinstellungen
 
