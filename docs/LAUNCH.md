@@ -4,6 +4,8 @@ Die fehlenden Betreiber- und Hostingangaben werden nach Wunsch des Product Owner
 
 Die vollständige [Abnahmemappe](MANUAL-ACCEPTANCE.md) enthält konkrete Prüfschritte, erwartete Nachweise und eine private, versionsgebundene JSON-Vorlage. `node dist/scripts/launch-acceptance.js --template DATEI` bereitet sie vor; `--check DATEI` prüft ausschließlich die Vollständigkeit der manuellen Einträge.
 
+Nach sicherer Owner-Einrichtung können Entwurf, Konfigurationsprüfung und Vorlagen auch im Adminbereich [Einrichtung](ADMIN-SETUP.md) vorbereitet werden. Dort gespeicherte Angaben verändern die laufende Konfiguration nicht; private Übernahme und Neustart bleiben kontrollierte Betriebsschritte.
+
 1. `.env.example` nach `.env` kopieren. Eigene Datenbankzugänge und ein zufälliges `SESSION_SECRET` mit mindestens 32 Zeichen setzen. Beispiel- und Testwerte werden für das Produktionsgeheimnis abgewiesen. Die private Datei bleibt außerhalb des Webroots und von Git.
 2. Domain, tatsächliche Node-Version, HTTPS, Proxy, App-Root und Neustartverfahren nach [HOSTING.md](HOSTING.md) prüfen. `SITE_URL` bezeichnet die HTTPS-Origin ohne Pfad oder abschließenden Schrägstrich, zum Beispiel `https://community.example.org`. Produktion verwendet `NODE_ENV=production`; `DEMO_MODE` entfernen. Die DB-Transportverschlüsselung oder den geschützten alternativen Transport dokumentieren.
 3. Eigene endgültige Rechtstexte anhand [der Entwürfe](legal/README.md) bearbeiten, Betreibername, Anschrift und Kontakt ergänzen. Dienstleister, Verträge und Aufbewahrung bestätigen. Erst dann `LEGAL_REVIEWED=true` setzen. Die Rohdatenfrist mit `RAW_VOTE_RETENTION_DAYS` konfigurieren.

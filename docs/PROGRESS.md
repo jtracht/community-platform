@@ -1,6 +1,10 @@
 # Fortschritt gegenüber dem Masterprompt
 
-Stand: 12. Oktober 2026 · Entwicklungsstand v0.1.3; veröffentlicht ist v0.1.2.
+Stand: 12. Oktober 2026 · Entwicklungsstand v0.1.4; veröffentlicht ist v0.1.3.
+
+## Einrichtungseinstellungen
+
+Die zusätzlich beauftragte zentrale Einrichtung ist implementiert: Owner-Zugriff, persistenter Entwurf für nicht geheime Konfigurationsfelder, Versionskonfliktschutz, tatsächlicher Serverstatus, auditierte Konfigurations-/Abnahmevorlagendownloads und geführte manuelle Prüfschritte. Nachweise: ADMIN-SETUP.md, Migration 010, zwei zusätzliche Fach-/API-Tests und eine zusätzliche Browser-/Accessibilityprüfung. Insgesamt 30 Fach-/MySQL-/API-Tests und 14 Browserprüfungen. **31/31 = 100 %** des vereinbarten Entwicklungs- und Vorbereitungsumfangs. Entwurfsänderungen aktivieren keine laufende Serverkonfiguration, keine Rechtstextfreigabe und keinen Livegang. Die tatsächlichen Betriebsnachweise des ursprünglichen Masterprompts bleiben offen: 28/32 = 87,5 %.
 
 ## Vollständige Vorbereitung der manuellen Abnahme
 
@@ -22,7 +26,7 @@ Für den ursprünglichen Masterprompt einschließlich der nun ausgeschlossenen B
 | --- | --- | --- | --- |
 | 1 | Modularer TypeScript-/Node-Monolith, getrennte öffentliche/admin/API-Bereiche | Erfüllt | ARCHITECTURE.md; apps und packages; strenge TypeScript-Prüfung |
 | 2 | Typisierte MySQL-Datenhaltung und klare Paketgrenzen | Erfüllt | packages/database, packages/polls; parametrisiertes SQL |
-| 3 | Migrationen, Fremdschlüssel, Indizes und InnoDB-Transaktionen | Erfüllt | Neun SQL-Migrationen; MySQL-Integration und Migrationsprüfsummen |
+| 3 | Migrationen, Fremdschlüssel, Indizes und InnoDB-Transaktionen | Erfüllt | Zehn SQL-Migrationen; MySQL-Integration und Migrationsprüfsummen |
 | 4 | Höchstens eine aktive offizielle Hauptumfrage | Erfüllt | Singleton-Sperre; Integration und Parallelitätstests |
 | 5 | Entwurf, Terminierung, Start/Ende, Pause und Übergänge | Erfüllt | service.ts, Administration; API- und Phasentests |
 | 6 | Freitext, Single-/Multiple-Choice und Ranking | Erfüllt | Fachtests sowie Browserprüfungen |

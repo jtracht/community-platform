@@ -310,6 +310,47 @@ test("Owner records security evidence, follows up without overwriting and export
   await page.getByRole("button", { name: "Abmelden", exact: true }).click();
 });
 
+test("Owner prepares setup settings, persists draft and downloads an open acceptance template", async ({ page }) => {
+  const id = randomUUID(), email = id + "@example.invalid", secret = new OTPAuth.Secret({ size: 20 });
+  const password = "browser-setup-password-long";
+  await pool.execute("INSERT INTO admins(id,email,password_hash,totp_secret,role) VALUES(?,?,?,?,?)",
+    [id, email, hashPassword(password), encrypt(secret.base32), "owner"]);
+  await page.goto("/admin");
+  await page.getByRole("textbox", { name: "E-Mail" }).fill(email);
+  await page.getByLabel("Passwort", { exact: true }).fill(password);
+  await page.getByRole("textbox", { name: "Zwei-Faktor-Code" }).fill(new OTPAuth.TOTP({ secret }).generate());
+  await page.getByRole("button", { name: "Anmelden", exact: true }).click();
+  await page.getByRole("button", { name: "Einrichtung", exact: true }).click();
+  await expect(page.getByRole("heading", { name: "Einrichtungseinstellungen" })).toBeVisible();
+  await page.getByLabel("Produktive HTTPS-Adresse", { exact: true }).fill("https://community.example.org");
+  const operator = "Einrichtung " + id.slice(0, 8);
+  await page.getByLabel("Rechtlicher Betreiber", { exact: true }).fill(operator);
+  await page.getByLabel("Öffentliche Kontakt-E-Mail", { exact: true }).fill("contact@example.invalid");
+  await page.getByLabel("Rohdatenfrist in Tagen", { exact: true }).fill("90");
+  await page.getByRole("checkbox", { name: "Einrichtungsentwurf ausdrücklich speichern" }).check();
+  const saved = page.waitForResponse(r => r.url().endsWith("/api/admin/setup") && r.request().method() === "PUT");
+  await page.getByRole("button", { name: "Einrichtungsentwurf speichern", exact: true }).click();
+  expect((await saved).status()).toBe(200);
+  await page.reload();
+  await page.getByRole("button", { name: "Einrichtung", exact: true }).click();
+  await expect(page.getByLabel("Rechtlicher Betreiber", { exact: true })).toHaveValue(operator);
+  for (const [label, filename] of [["Gespeicherten Konfigurationsentwurf herunterladen", "setup.env.example"], ["Offene Abnahmevorlage herunterladen", "launch-acceptance.json"]] as const) {
+    const pending = page.waitForEvent("download");
+    await page.getByRole("link", { name: label, exact: true }).click();
+    const download = await pending;
+    expect(download.suggestedFilename()).toBe(filename);
+    const stream = await download.createReadStream(), chunks = [];
+    for await (const chunk of stream!) chunks.push(chunk);
+    const body = Buffer.concat(chunks).toString("utf8");
+    if (filename.endsWith("json")) expect(JSON.parse(body).checks.every((c: { status: string }) => c.status === "pending")).toBe(true);
+    else { expect(body).toContain(operator); expect(body).toContain("LEGAL_REVIEWED='false'"); }
+  }
+  expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
+  await expect(page.locator("body")).toHaveJSProperty("scrollWidth", await page.locator("body").evaluate(e => e.clientWidth));
+  await page.getByRole("button", { name: "Abmelden", exact: true }).click();
+  await expect(page.getByRole("heading", { name: "Einrichtungseinstellungen" })).toHaveCount(0);
+});
+
 for (const mode of ["email", "account"] as const)
   test(`Verified ${mode} participation stays inside the survey`, async ({
     page,

@@ -11,6 +11,7 @@ Eine modulare Webplattform für Community-Umfragen und nachvollziehbare Entschei
 - Geschütztes Admin-Panel mit Passwort/TOTP, granularen Rechten, Ideenmoderation, Einsprüchen, Entscheidungen, Bewertungen und Entwicklungsfreigaben.
 - Manuell genehmigte GitHub-Issues, PR-Verknüpfung, signierte Webhooks, Konfliktprüfung und Auditprotokolle.
 - Private [Sicherheitsberichte und Prüfchroniken](docs/SECURITY-REPORTS.md) mit festen Momentaufnahmen, Verantwortlichen, Folgeprüfungen und protokolliertem JSON-Export.
+- Zentrale [Einrichtungseinstellungen](docs/ADMIN-SETUP.md) für den Product Owner: persistenter Konfigurationsentwurf, aktueller Serverstatus und geschützte Vorlagendownloads.
 - MySQL-Migrationen, Modulverwaltung, Datenschutzexport/-löschung, Rohdatenaufbewahrung und geprüfte Releaseentwürfe mit Prüfsummen.
 
 GitHub erstellt nach erfolgreichen Prüfungen das Artefakt `production-package`. Versionierte Releaseentwürfe und deren Veröffentlichung laufen über getrennte, durch den Product Owner freizugebende Workflows. Anleitung: [GitHub-Produktivpakete und Releases](docs/GITHUB-RELEASES.md).

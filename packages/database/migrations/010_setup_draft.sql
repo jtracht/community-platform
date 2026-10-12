@@ -1,0 +1,7 @@
+CREATE TABLE setup_draft (
+ id TINYINT PRIMARY KEY, revision INT UNSIGNED NOT NULL DEFAULT 0,
+ settings JSON NOT NULL, updated_by CHAR(36) NULL,
+ updated_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+ CHECK(id=1), FOREIGN KEY(updated_by) REFERENCES admins(id)
+) ENGINE=InnoDB;
+INSERT INTO setup_draft(id,settings) VALUES(1,JSON_OBJECT());
