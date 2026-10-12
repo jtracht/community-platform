@@ -52,6 +52,7 @@ export function grants(role: Role, extra: Permission[] = []): Permission[] {
   ];
 }
 export function requiredPermission(method: string, path: string): Permission {
+  if (path === "/api/admin/setup" || path.startsWith("/api/admin/setup/")) return "operations.manage";
   if (path.startsWith("/api/admin/security/")) return "operations.manage";
   const read = method === "GET";
   if (path.includes("/github")) return "github.manage";

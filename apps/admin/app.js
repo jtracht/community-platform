@@ -8,6 +8,7 @@ let extra = { steps: [], evaluations: [], dependencies: [], appeals: [] },
   moduleHealth = { manifests: [], health: [], history: [] },
   users = null;
 let securityData = null, selectedSecurityReport = null, securityPage = 0;
+let setupData = null;
 const selectedIdeas = new Set();
 let loggedOut = false,
   viewRevision = 0;
@@ -82,6 +83,7 @@ async function reload() {
     securityData = await api("security/reports?page=" + securityPage);
     if (selectedSecurityReport) selectedSecurityReport = await api("security/reports/" + selectedSecurityReport.id);
   }
+  if (tab === "Einrichtung" && allowed("operations.manage")) setupData = await api("setup");
   if (loggedOut || revision !== viewRevision) return;
   document.querySelector("#logout").hidden = false;
   draw();
@@ -90,6 +92,7 @@ function login() {
   tab = "Dashboard";
   securityData = null;
   selectedSecurityReport = null;
+  setupData = null;
   loggedOut = true;
   viewRevision++;
   nav.replaceChildren();
@@ -139,6 +142,7 @@ function draw() {
     "Entwicklung",
     "Module",
     "Betrieb",
+    "Einrichtung",
     "Sicherheit",
     "Benutzer",
   ]) {
@@ -149,13 +153,14 @@ function draw() {
       Entwicklung: "planning.read",
       Module: "modules.read",
       Betrieb: "operations.manage",
+      Einrichtung: "operations.manage",
       Sicherheit: "operations.manage",
       Benutzer: "users.manage",
     }[name];
     if (permission && !allowed(permission)) continue;
     const b = action(name, async () => {
       tab = name;
-      if (name === "Sicherheit") await reload();
+      if (name === "Sicherheit" || name === "Einrichtung") await reload();
       else draw();
     });
     if (tab === name) b.setAttribute("aria-current", "page");
@@ -213,6 +218,55 @@ function draw() {
   }
   if (tab === "Benutzer") userManagement();
   if (tab === "Sicherheit" && allowed("operations.manage")) securityTools();
+  if (tab === "Einrichtung" && allowed("operations.manage")) setupTools();
+}
+function setupTools() {
+  if (!setupData) return;
+  const status = el("section", undefined, "panel");
+  status.append(el("h2", "Einrichtungseinstellungen"), el("p", "Einrichtungsentwurf vorbereiten, Konfiguration prüfen und Abnahmen planen. Speichern ändert die laufende Serverkonfiguration nicht.", "hint"));
+  const readiness = setupData.readiness;
+  const blockers = readiness.checks.filter(c => c.status === "blocker").length;
+  status.append(el("h3", "Aktuelle Serverkonfiguration"), el("p", blockers ? blockers + " offene Voraussetzungen" : "Keine erkannten Konfigurationsblocker"));
+  for (const check of readiness.checks) status.append(el("p", ({ pass: "OK", blocker: "Offen", warning: "Hinweis" })[check.status] + " · " + check.message));
+  status.append(action("Einrichtungsstatus aktualisieren", reload));
+  content.append(status);
+  const form = el("form", undefined, "panel"), settings = setupData.settings;
+  form.append(el("h2", "Einrichtungsentwurf"), el("p", "Nur der Product Owner kann diesen Entwurf bearbeiten. Passwörter, API-Schlüssel und Rechtstextfreigaben werden hier nicht gespeichert.", "hint"));
+  for (const [name, label, type, max] of [
+    ["siteUrl", "Produktive HTTPS-Adresse", "url", 250],
+    ["operatorName", "Rechtlicher Betreiber", "text", 160],
+    ["operatorAddress", "Ladungsfähige Anschrift", "text", 500],
+    ["operatorEmail", "Öffentliche Kontakt-E-Mail", "email", 250],
+    ["githubRepository", "GitHub-Repository (owner/repository)", "text", 200],
+  ]) {
+    const input = field(form, name, label, type, settings[name]);
+    input.required = false; input.maxLength = max;
+  }
+  const retention = field(form, "retentionDays", "Rohdatenfrist in Tagen", "number", settings.retentionDays ?? "");
+  retention.required = false; retention.min = "7"; retention.max = "3650";
+  const mailLimit = field(form, "mailDailyLimit", "Tägliches Mail-Limit", "number", settings.mailDailyLimit);
+  mailLimit.min = "1"; mailLimit.max = "10000";
+  field(form, "confirmed", "Einrichtungsentwurf ausdrücklich speichern", "checkbox");
+  const revision = setupData.revision;
+  content.append(submitForm(form, "Einrichtungsentwurf speichern", data => {
+    const values = Object.fromEntries(data);
+    delete values.confirmed;
+    values.retentionDays = data.get("retentionDays") === "" ? null : Number(data.get("retentionDays"));
+    values.mailDailyLimit = Number(data.get("mailDailyLimit"));
+    return api("setup", "PUT", { revision, settings: values, confirmed: data.has("confirmed") });
+  }));
+  const downloads = el("section", undefined, "panel");
+  downloads.append(el("h2", "Einrichtung übernehmen"), el("p", "Den gespeicherten Entwurf herunterladen, privat mit eigenen Secrets und endgültigen Rechtstexten ergänzen, auf Staging prüfen und kontrolliert über das Hosting übernehmen. Vorhandene .env niemals ungeprüft ersetzen.", "hint"));
+  for (const [label, path] of [["Gespeicherten Konfigurationsentwurf herunterladen", "export"], ["Offene Abnahmevorlage herunterladen", "acceptance"]]) {
+    const link = el("a", label); link.href = "/api/admin/setup/" + path; link.setAttribute("download", ""); downloads.append(link, el("br"));
+  }
+  downloads.append(el("p", "Erster Adminzugang: sicheres Offline-Setup gemäß docs/OPERATIONS.md. Eine vollständige Hosting-, Rechts- oder Anbieterfreigabe erfolgt weiterhin manuell.", "hint"));
+  content.append(downloads);
+  const steps = el("section", undefined, "panel"); steps.append(el("h2", "Manuelle Einrichtung und Abnahme"));
+  for (const step of setupData.steps) {
+    const entry = el("details"); entry.append(el("summary", step.group + " · " + step.id), el("p", step.instruction)); steps.append(entry);
+  }
+  content.append(steps);
 }
 function polls() {
   for (const p of dashboard.polls) {
