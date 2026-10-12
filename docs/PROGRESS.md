@@ -1,10 +1,14 @@
 # Fortschritt gegenüber dem Masterprompt
 
-Stand: 11. Oktober 2026 · Entwicklungsstand v0.1.2; veröffentlicht ist v0.1.1.
+Stand: 12. Oktober 2026 · Entwicklungsstand v0.1.3; veröffentlicht ist v0.1.2.
+
+## Vollständige Vorbereitung der manuellen Abnahme
+
+Die zusätzlich beauftragte Abnahmevorbereitung ist umgesetzt: MANUAL-ACCEPTANCE.md nennt 16 konkrete Prüfbereiche, erwartete Nachweise und fehlende tatsächliche Angaben. Das ausführbare Werkzeug erstellt private Vorlagen ohne Überschreiben und prüft Status, Verantwortliche, Nachweisreferenzen, Zeitfolge und Bindung an Version/Quellcommit des installierten Pakets. Es prüft keine tatsächlichen Nachweise und ändert keine Produktionssperren. Ein zusätzlicher Fachtest prüft unvollständige Angaben, falsche Paketbindung, ungültige Zeitpunkte und zu frühe Abschlussfreigabe; die Paketinstallation prüft das kompilierte Werkzeug ebenfalls. **30/30 = 100 % des aktuell vereinbarten Entwicklungs- und Vorbereitungsumfangs** sind umgesetzt. Die ursprünglichen vier manuellen Betriebsblöcke sind vorbereitet, aber weiterhin nicht tatsächlich abgenommen: ursprünglicher Masterprompt weiterhin 28/32 = 87,5 %.
 
 ## Neue freigegebene Admin-Erweiterung
 
-Der Product Owner hat Sicherheitsberichte und Prüfprotokolle als nächste Funktion beauftragt. Dieser zusätzliche Block ist umgesetzt: geschützte Momentaufnahmen, manuelle Prüfungen mit Verantwortlichen, unverändert erhaltene Originaleinträge, serialisierte Folgeprüfungen und auditierter JSON-Export. Nachweis: SECURITY-REPORTS.md, Migration 009, zwei zusätzliche Fach-/API-Tests und ein zusätzlicher Browser-/Accessibilitytest. Insgesamt bestehen 27 Fach-/MySQL-/API-Tests und 13 Browserprüfungen. Damit ist der aktuell vereinbarte Entwicklungsumfang **29/29 = 100 %**; die neue Version ist zur GitHub-Prüfung vorbereitet, noch nicht veröffentlicht. Die historische Abdeckung des ursprünglichen Masterprompts bleibt 28/32 = 87,5 %; die Erweiterung ist kein Ersatz für ausgeschlossene Betriebsnachweise.
+Der Product Owner hat Sicherheitsberichte und Prüfprotokolle als nächste Funktion beauftragt. Dieser zusätzliche Block ist umgesetzt und als v0.1.2 veröffentlicht: geschützte Momentaufnahmen, manuelle Prüfungen mit Verantwortlichen, unverändert erhaltene Originaleinträge, serialisierte Folgeprüfungen und auditierter JSON-Export. Nachweis: SECURITY-REPORTS.md, Migration 009, zwei zusätzliche Fach-/API-Tests und ein zusätzlicher Browser-/Accessibilitytest. Für v0.1.2 bestanden 27 Fach-/MySQL-/API-Tests und 13 Browserprüfungen. Damit waren **29/29 = 100 %** des damaligen vereinbarten Entwicklungsumfangs erfüllt. Die historische Abdeckung des ursprünglichen Masterprompts bleibt 28/32 = 87,5 %; die Erweiterung ist kein Ersatz für ausgeschlossene Betriebsnachweise.
 
 Die früher genannten 85 % waren eine grobe Schätzung. Künftig verwenden wir 32 gleich gewichtete, überprüfbare Anforderungsblöcke aus dem Masterprompt. Ein Block zählt erst, wenn Umsetzung und der hier genannte Nachweis vorhanden sind. Der Wert beschreibt Abnahmedeckung, keine Schätzung von Arbeitsstunden. 28 von 32 Blöcken sind erfüllt: **87,5 %, gerundet 88 %**. Noch unbeschlossene zukünftige Communitymodule zählen nicht als fehlende Startfunktionen; ihr Erweiterungsrahmen zählt ausdrücklich mit.
 

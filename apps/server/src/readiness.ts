@@ -103,6 +103,7 @@ export async function readinessReport(env: NodeJS.ProcessEnv = process.env, read
     databaseChecked: Boolean(read),
     checks,
     manualChecks: [
+      "Versionsgebundene Nachweise anhand docs/MANUAL-ACCEPTANCE.md vorbereiten; der Vollständigkeitsprüfer ersetzt keine manuelle Durchführung.",
       "Konkretes netcup-Hosting, Zertifikat, Proxy, Neustart und Prozesslimits anhand docs/HOSTING.md nachweisen.",
       "Cron, Mailzustellung, GitHub und Stripe mit den tatsächlich eingerichteten Anbietern prüfen.",
       "Backup, Restore, Rollback und Datenschutzverfahren im Staging nachweisen; Product Owner gibt den Livegang frei.",

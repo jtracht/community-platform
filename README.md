@@ -16,6 +16,8 @@ Eine modulare Webplattform für Community-Umfragen und nachvollziehbare Entschei
 GitHub erstellt nach erfolgreichen Prüfungen das Artefakt `production-package`. Versionierte Releaseentwürfe und deren Veröffentlichung laufen über getrennte, durch den Product Owner freizugebende Workflows. Anleitung: [GitHub-Produktivpakete und Releases](docs/GITHUB-RELEASES.md).
 
 Versions- und Abnahmestand: [Fortschritt gegenüber dem Masterprompt](docs/PROGRESS.md). Vollständige technische Umsetzung ersetzt keine tatsächliche Hosting-, Anbieter- und Rechtsabnahme.
+
+Für die verbleibende manuelle Freigabe ist eine [Abnahmemappe mit Prüfschritten und privater Nachweisvorlage](docs/MANUAL-ACCEPTANCE.md) vorbereitet. Der enthaltene Prüfer bindet die Einträge an das installierte Release und bestätigt ausschließlich deren Vollständigkeit.
 - Responsive Oberfläche in Schwarz und Anthrazit mit transparenten Karten, lokal bereitgestellten Motion-Animationen und Ergebnisbalken in den Auswahlfeldern. Der Countdown erscheint nach der eigenen Abstimmung; Ergebnisregeln bleiben wirksam.
 
 ## Schnellstart
