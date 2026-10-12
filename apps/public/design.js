@@ -16,12 +16,12 @@
   if (!reduced.matches) {
     window.Motion?.animate(
       ".star-surface",
-      { opacity: [0, 0.58], scale: [0.96, 1] },
+      { opacity: [0, 0.88], scale: [0.96, 1] },
       { duration: 2.2, ease: "easeOut" },
     );
     window.Motion?.animate(
       ".star-corona",
-      { opacity: [0, 0.55] },
+      { opacity: [0, 0.68] },
       { duration: 2.2, ease: "easeOut" },
     );
   }

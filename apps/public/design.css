@@ -1,3 +1,24 @@
+:root:has(.survey-stage) {
+  color-scheme: dark;
+  scrollbar-width: thin;
+  scrollbar-color: #606060 #080808;
+}
+:root:has(.survey-stage)::-webkit-scrollbar,
+.survey-stage ::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+  background: #080808;
+}
+:root:has(.survey-stage)::-webkit-scrollbar-thumb,
+.survey-stage ::-webkit-scrollbar-thumb {
+  background: #606060;
+  border: 2px solid #080808;
+  border-radius: 8px;
+}
+:root:has(.survey-stage)::-webkit-scrollbar-thumb:hover,
+.survey-stage ::-webkit-scrollbar-thumb:hover {
+  background: #8c8c8c;
+}
 .survey-stage {
   color-scheme: dark;
   --accent: #bcbcbc;
@@ -10,6 +31,8 @@
   display: flex;
   flex-direction: column;
   isolation: isolate;
+  scrollbar-width: thin;
+  scrollbar-color: #606060 #080808;
 }
 .atmosphere {
   position: fixed;
@@ -29,7 +52,7 @@
   --light-y: 38%;
 }
 .star {
-  --star-size: clamp(380px, 76vmin, 880px);
+  --star-size: clamp(260px, 52vmin, 600px);
   position: absolute;
   width: var(--star-size);
   height: var(--star-size);
@@ -44,20 +67,20 @@
   inset: 14%;
   border-radius: 50%;
   background: radial-gradient(circle at var(--light-x) var(--light-y),
-    #ffffff 0%, #f4f4f4 20%, #dededec9 38%, #c4c4c470 52%,
-    #bbbbbb28 66%, transparent 80%);
-  box-shadow: 0 0 32px #ededed30, 0 0 90px #cccccc25;
+    #ffffff 0%, #ffffff 22%, #f8f8f8e8 38%, #ededed9c 52%,
+    #dddddd38 66%, transparent 80%);
+  box-shadow: 0 0 32px #ffffff60, 0 0 90px #ededed38;
   filter: blur(1.5px);
-  opacity: 0.58;
+  opacity: 0.88;
 }
 .star-corona {
   position: absolute;
   inset: -12%;
   border-radius: 50%;
   background: radial-gradient(circle,
-    #d6d6d645 0%, #bcbcbc38 28%, #bbbbbb26 40%, #8f8f8f0a 58%, transparent 70%);
-  filter: blur(30px);
-  opacity: 0.55;
+    #ffffff70 0%, #ededed50 28%, #dddddd30 40%, #aaaaaa0c 58%, transparent 70%);
+  filter: blur(22px);
+  opacity: 0.68;
   transform: translateZ(-45px);
 }
 .star-corona::after {
@@ -78,8 +101,8 @@
   inset: 27%;
   border-radius: 50%;
   background: radial-gradient(circle at var(--light-x) var(--light-y),
-    #ffffff6b, #eeeeee18 42%, transparent 70%);
-  filter: blur(30px);
+    #ffffffc0, #ffffff38 42%, transparent 70%);
+  filter: blur(18px);
   transform: translateZ(24px);
 }
 .star-glare::before,
@@ -501,7 +524,7 @@
 }
 @media (max-width: 640px) {
   .star {
-    --star-size: clamp(380px, 130vw, 650px);
+    --star-size: clamp(240px, 90vw, 420px);
     left: calc(14% - var(--star-size) / 2);
     top: calc(35% - var(--star-size) / 2);
   }
@@ -543,5 +566,11 @@
   }
   .depth-scene {
     will-change: auto;
+  }
+}
+@media (forced-colors: active) {
+  :root:has(.survey-stage), .survey-stage {
+    scrollbar-color: auto;
+    scrollbar-width: auto;
   }
 }
