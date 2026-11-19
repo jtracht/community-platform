@@ -32,7 +32,7 @@
     "nodemailer": "^10.1.0",
     "otpauth": "^9.0.0",
     "stripe": "^23.0.0",
-    "zod": "^4.0.0"
+    "zod": "^4.6.6"
   },
   "devDependencies": {
     "@axe-core/playwright": "^4.13.0",
