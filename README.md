@@ -19,6 +19,8 @@ GitHub erstellt nach erfolgreichen Prüfungen das Artefakt `production-package`.
 Versions- und Abnahmestand: [Fortschritt gegenüber dem Masterprompt](docs/PROGRESS.md). Vollständige technische Umsetzung ersetzt keine tatsächliche Hosting-, Anbieter- und Rechtsabnahme.
 
 Für die verbleibende manuelle Freigabe ist eine [Abnahmemappe mit Prüfschritten und privater Nachweisvorlage](docs/MANUAL-ACCEPTANCE.md) vorbereitet. Der enthaltene Prüfer bindet die Einträge an das installierte Release und bestätigt ausschließlich deren Vollständigkeit.
+
+[Technisches SEO/GEO/AEO](docs/SEARCH-OPTIMIZATION.md) ergänzt Canonicals, strukturierte Daten und Sitemap bei unveränderten sichtbaren Seiten. Suchindexierung ist standardmäßig deaktiviert und wird erst für die freigegebene Produktionsdomain aktiviert.
 - Responsive Oberfläche in Schwarz und Anthrazit mit transparenten Karten, lokal bereitgestellten Motion-Animationen und Ergebnisbalken in den Auswahlfeldern. Der Countdown erscheint nach der eigenen Abstimmung; Ergebnisregeln bleiben wirksam.
 
 ## Schnellstart
