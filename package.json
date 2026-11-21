@@ -37,7 +37,7 @@
   "devDependencies": {
     "@axe-core/playwright": "^4.13.0",
     "@playwright/test": "^1.64.0",
-    "@stripe/stripe-js": "^10.0.0",
+    "@stripe/stripe-js": "^10.3.0",
     "@types/node": "^26.6.5",
     "@types/nodemailer": "^8.0.2",
     "tsx": "^4.0.0",
