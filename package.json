@@ -35,7 +35,7 @@
     "zod": "^4.0.0"
   },
   "devDependencies": {
-    "@axe-core/playwright": "^4.13.0",
+    "@axe-core/playwright": "^4.14.0",
     "@playwright/test": "^1.64.0",
     "@stripe/stripe-js": "^10.0.0",
     "@types/node": "^26.6.5",
